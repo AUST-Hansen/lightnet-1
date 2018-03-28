@@ -26,7 +26,7 @@ WORKERS = 4
 PIN_MEM = True
 TRAINFILE = '.sandbox/data/files.data'                      # Training dataset files
 VALIDFILE = '.sandbox/data/files.data'                      # Validation dataset files
-VISDOM_PORT = 8080
+VISDOM_PORT = 8097
 
 CLASSES = 1
 LABELS = ['person']

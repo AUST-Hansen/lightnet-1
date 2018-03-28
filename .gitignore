@@ -9,6 +9,9 @@ __pycache__/
 *.so
 *.o
 
+# macOS specific
+.DS_Store
+
 build/
 develop-eggs/
 dist/

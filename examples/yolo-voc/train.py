@@ -11,6 +11,7 @@ import time
 from statistics import mean
 import numpy as np
 import visdom
+import hyperdash
 import torch
 from torchvision import transforms as tf
 import brambox.boxes as bbb
@@ -86,6 +87,7 @@ class VOCTrainingEngine(ln.engine.Engine):
         self.cuda = arguments.cuda
         self.backup_folder = arguments.backup
         self.visdom = args.visdom
+        self.hyperdash = args.hyperdash
 
         log.debug('Creating network')
         net = ln.models.Yolo(CLASSES, arguments.weight, CONF_THRESH, NMS_THRESH)
@@ -118,7 +120,8 @@ class VOCTrainingEngine(ln.engine.Engine):
             legend = ['Total loss', 'Coordinate loss', 'Confidence loss', 'Class loss']
         else:
             legend = ['Total loss', 'Coordinate loss', 'Confidence loss']
-        self.plot_train_loss = ln.engine.LinePlotter(
+
+        self.visdom_plot_train_loss = ln.engine.VisdomLinePlotter(
             self.visdom,
             'train_loss',
             opts=dict(
@@ -128,7 +131,15 @@ class VOCTrainingEngine(ln.engine.Engine):
                 showlegend=True,
                 legend=legend,
             )
+
         )
+        self.hyperdash_plot_train_loss = ln.engine.HyperdashLinePlotter(
+            self.hyperdash,
+            opts={
+                'Batch Size': batch_size,
+            }
+        )
+
         self.train_loss = {'tot': [], 'coord': [], 'conf': [], 'cls': []}
         self.add_rate('learning_rate', LR_STEPS, [lr / BATCH for lr in LR_RATES])
         self.add_rate('backup_rate', BP_STEPS, BP_RATES, BACKUP)
@@ -162,11 +173,16 @@ class VOCTrainingEngine(ln.engine.Engine):
         self.train_loss = {'tot': [], 'coord': [], 'conf': [], 'cls': []}
 
         if CLASSES > 1:
-            self.plot_train_loss(np.array([[tot, coord, conf, cls]]), np.array([self.batch]))
+            self.visdom_plot_train_loss(np.array([[tot, coord, conf, cls]]), np.array([self.batch]))
             self.log(f'{self.batch} Loss:{round(tot, 5)} (Coord:{round(coord, 2)} Conf:{round(conf, 2)} Cls:{round(cls, 2)})')
         else:
-            self.plot_train_loss(np.array([[tot, coord, conf]]), np.array([self.batch]))
+            self.visdom_plot_train_loss(np.array([[tot, coord, conf]]), np.array([self.batch]))
             self.log(f'{self.batch} Loss:{round(tot, 5)} (Coord:{round(coord, 2)} Conf:{round(conf, 2)})')
+
+        self.hyperdash_plot_train_loss('Loss Total', tot, log=False)
+        self.hyperdash_plot_train_loss('Loss Coordinate', coord, log=False)
+        self.hyperdash_plot_train_loss('Loss Confidence', conf, log=False)
+        self.hyperdash_plot_train_loss('Loss Class', cls, log=False)
 
         if self.batch % self.backup_rate == 0:
             self.network.save_weights(os.path.join(self.backup_folder, f'weights_{self.batch}.pt'))
@@ -191,6 +207,7 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--backup', help='Backup folder', default='./backup')
     parser.add_argument('-c', '--cuda', action='store_true', help='Use cuda to speed up training')
     parser.add_argument('-v', '--visdom', action='store_true', help='Visualize training data with visdom')
+    parser.add_argument('-h', '--hyperdash', action='store_true', help='Visualize training data with hyperdash')
     args = parser.parse_args()
 
     # Parse arguments
@@ -205,6 +222,11 @@ if __name__ == '__main__':
         args.visdom = visdom.Visdom(port=VISDOM_PORT)
     else:
         args.visdom = None
+
+    if args.hyperdash:
+        args.hyperdash = hyperdash.Experiment('YOLOv2 Pascal VOC Train')
+    else:
+        args.hyperdash = None
 
     if not os.path.isdir(args.backup):
         if not os.path.exists(args.backup):
@@ -222,3 +244,6 @@ if __name__ == '__main__':
     b2 = eng.batch
 
     print(f'\nDuration of {b2-b1} batches: {t2-t1} seconds [{round((t2-t1)/(b2-b1), 3)} sec/batch]')
+
+    if self.hyperdash_plot_train_loss is not None:
+        self.hyperdash_plot_train_loss.close()

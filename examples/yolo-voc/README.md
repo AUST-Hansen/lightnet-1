@@ -1,6 +1,6 @@
 Training YOLO on VOC
 ====================
-This folder contains the scripts needed to train the lightnet YOLO network on VOC.  
+This folder contains the scripts needed to train the lightnet YOLO network on VOC.
 We perform the same training and testing as explained on the [yolo website](https://pjreddie.com/darknet/yolo/#train-voc).
 
 
@@ -19,17 +19,18 @@ There will now be a VOCdevkit folder with all the data.
 
 
 ## Generating labels
-We need to have the right labels for training and testing the network.  
+We need to have the right labels for training and testing the network.
 While brambox (and thus lightnet) can work with Pascal VOC annotations,
 we still need to group the data in a training and testing set.
 Because we are converting this anyway, we take the opportunity to convert the annotations to a pickle format,
-which will be faster to parse whilst training/testing.  
+which will be faster to parse whilst training/testing.
 You can check whether to annotation conversion was succesfull, by running the __bbox_view.py__ script from brambox.
 ```bash
 # Change the 'ROOT' variable in labels.py to point to the root directory that contains VOCdevkit
 ./labels.py
-bbox_view.py -lx .jpg anno_pickle $ROOT_FOLDER/train.pkl $ROOT_FOLDER/VOCdevkit
-bbox_view.py -lx .jpg anno_pickle $ROOT_FOLDER/test.pkl $ROOT_FOLDER/VOCdevkit
+wget https://gitlab.com/EAVISE/brambox/raw/master/scripts/bbox_show.py
+bbox_show.py -lx .jpg anno_pickle $ROOT_FOLDER/train.pkl $ROOT_FOLDER/VOCdevkit
+bbox_show.py -lx .jpg anno_pickle $ROOT_FOLDER/test.pkl $ROOT_FOLDER/VOCdevkit
 ```
 
 > Note that there is no validation set.
@@ -57,7 +58,7 @@ Use the __train.py__ script to train the model. You can use _train.py --help_ fo
 Use the __test.py__ script to test the model. You can again use _test.py --help_ for an explanation of the arguments and flags.
 ```bash
 # We use tqdm for a nice loading bar
-pip install tqdm 
+pip install tqdm
 
 # Adapt the model parameters inside of test.py to suite your needs
 ./test.py -cv backup/weight_30000.pt

@@ -30,6 +30,6 @@ setup.setup(
         'brambox',
     ],
     extras_require={
-        'visual': ['visdom']
+        'visual': ['visdom', 'hyperdash']
     },
 )

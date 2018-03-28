@@ -27,7 +27,7 @@ ln.logger.setLogFile('test.log', filemode='w')              # Enable logging of 
 WORKERS = 4
 PIN_MEM = True
 TESTFILE = '.sandbox/data/files.data'                       # Testing dataset files
-VISDOM_PORT = 8080
+VISDOM_PORT = 8097
 
 CLASSES = 1
 LABELS = ['person']

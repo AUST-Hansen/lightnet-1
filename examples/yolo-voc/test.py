@@ -12,6 +12,7 @@ from statistics import mean
 import numpy as np
 from tqdm import tqdm
 import visdom
+import hyperdash
 import torch
 from torchvision import transforms as tf
 import brambox.boxes as bbb
@@ -34,7 +35,7 @@ NETWORK_SIZE = (416, 416)
 CONF_THRESH = 0.001
 NMS_THRESH = 0.5
 
-BATCH = 64
+BATCH = 96
 MINI_BATCH = 8
 
 
@@ -82,7 +83,12 @@ def test(arguments):
     if arguments.visdom:
         log.debug('Creating visdom visualisation wrappers')
         vis = visdom.Visdom(port=8097)
-        plot_pr = ln.engine.LinePlotter(vis, 'pr', opts=dict(xlabel='Recall', ylabel='Precision', title='Precision Recall', xtickmin=0, xtickmax=1, ytickmin=0, ytickmax=1, showlegend=True))
+        visdom_plot_pr = ln.engine.VisdomLinePlotter(vis, 'pr', opts=dict(xlabel='Recall', ylabel='Precision', title='Precision Recall', xtickmin=0, xtickmax=1, ytickmin=0, ytickmax=1, showlegend=True))
+
+    if arguments.hyperdash:
+        log.debug('Creating hyperdash visualisation wrappers')
+        hd = hyperdash.Experiment('YOLOv2 Pascal VOC Test')
+        hyperdash_plot_pr = ln.engine.HyperdashLinePlotter(hd)
 
     log.debug('Running network')
     tot_loss = []
@@ -123,7 +129,12 @@ def test(arguments):
         log.test(f'{net.seen//BATCH} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf})')
 
     if arguments.visdom:
-        plot_pr(np.array(pr[0]), np.array(pr[1]), name=f'{net.seen//BATCH}: {m_ap}%')
+        visdom_plot_pr(np.array(pr[0]), np.array(pr[1]), name=f'mAP: {m_ap}%')
+
+    if arguments.visdom:
+        name = f'mAP: {m_ap}%'
+        for pr, re in zip(pr[0], pr[1]):
+            hyperdash_plot_pr(name, pr, re)
 
     if arguments.save_det is not None:
         # Note: These detection boxes are the coordinates for the letterboxed images,
@@ -138,6 +149,7 @@ if __name__ == '__main__':
     parser.add_argument('weight', help='Path to weight file', default=None)
     parser.add_argument('-c', '--cuda', action='store_true', help='Use cuda')
     parser.add_argument('-v', '--visdom', action='store_true', help='Visualize training data with visdom')
+    parser.add_argument('-v', '--hyperdash', action='store_true', help='Visualize training data with hyperdash')
     parser.add_argument('-s', '--save_det', help='Save detections as a brambox pickle file', default=None)
     args = parser.parse_args()
 

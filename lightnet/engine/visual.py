@@ -1,5 +1,5 @@
 #
-#   Visualisation with visdom
+#   Visualisations with visdom and hyperdash
 #   Copyright EAVISE
 #
 
@@ -8,12 +8,12 @@ import numpy as np
 import brambox.boxes as bbb
 
 
-__all__ = ['LinePlotter']
+__all__ = ['VisdomLinePlotter', 'HyperdashLinePlotter']
 log = logging.getLogger(__name__)
 
 
-class LinePlotter:
-    """Wrapper to easily plot curves and lines.
+class VisdomLinePlotter:
+    """Wrapper to easily plot curves and lines in visdom.
 
     Args:
         visdom (object): Visdom plotting object
@@ -99,3 +99,61 @@ class LinePlotter:
 
         if self.vis.win_exists(self.win, self.env):
             self.vis.close(self.win, self.env)
+
+
+class HyperdashLinePlotter
+    """Wrapper to easily plot curves and lines in hyperdash.
+
+    Args:
+        hyperdash (object): Hyperdash plotting object
+        window (str, optional): Name of the window to plot lines; Default **None**
+        env (str, optional): Name of the environment to plot into; Default **main**
+        name (str, optional): Name of the trace to draw by default; Default **None**
+        opts (dict, optional): Dictionary with default options; Default **{}**
+
+    Note:
+        If the hyperdash argument is None, this plotter will do nothing.
+        This can be used to disable using the hyperdash plotter, without having to check for it in the application code.
+    """
+
+    def __init__(self, hyperdash, opts={}):
+        self.hd = hyperdash
+        self.opts = opts
+
+        if self.hd is None:
+            return
+
+        for opt in opts.keys():
+            val = opts[opt]
+            self.hd.param(opt, val)
+
+    def __call__(self, name, y, x=None, log=True):
+        """Add point to a specified line with given name
+
+        Args:
+            name (str): Name of the value you want to plot
+            val (float): The new value you want to plot
+        """
+        if self.hd is None:
+            return
+
+        if x is None:
+            self.hd.metric(name, y, log=log)
+        else:
+            self.hd._hd_client._metric(name, x, y, log=log, is_internal=False)
+
+    def clear(self, *args, **kwargs):
+        """Unused.
+
+        Kept for compatibility with VisdomLinePlotter
+        """
+        if self.hd is None:
+            return
+
+    def close(self):
+        """End the hyperdash session."""
+        if self.hd is None:
+            return
+
+        self.hd.end()
+
