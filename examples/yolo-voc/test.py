@@ -17,6 +17,7 @@ import torch
 from torchvision import transforms as tf
 import brambox.boxes as bbb
 import lightnet as ln
+import time
 
 log = logging.getLogger('lightnet.test')
 ln.logger.setLogFile('best_pr.log', filemode='a')           # Enable logging of test logs (By appending, multiple runs will keep writing to same file, allowing to search the best)
@@ -132,6 +133,7 @@ def test(arguments):
         visdom_plot_pr(np.array(pr[0]), np.array(pr[1]), name=f'mAP: {m_ap}%')
 
     if arguments.hyperdash:
+        now = time.time()
         name = f'mAP: {m_ap}%'
         re_seen = None
         for index, (re_, pr_) in enumerate(sorted(zip(pr[0], pr[1]))):
@@ -139,8 +141,7 @@ def test(arguments):
             if re_ != re_seen:
                 re_seen = re_
                 re_ = int(re_ * 100.0)
-                print(re_, pr_)
-                hyperdash_plot_pr(name, pr_, re_)
+                hyperdash_plot_pr(name, pr_, now + re_)
 
     if arguments.save_det is not None:
         # Note: These detection boxes are the coordinates for the letterboxed images,
@@ -150,7 +151,7 @@ def test(arguments):
         #bbb.generate('anno_pickle', det, Path('anno-letterboxed_'+arguments.save_det).with_suffix('.pkl'))
 
     if arguments.hyperdash:
-        hd.close()
+        hyperdash_plot_pr.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Test a lightnet network')
