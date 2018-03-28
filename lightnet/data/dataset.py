@@ -183,8 +183,8 @@ class BatchSampler(torchBatchSampler):
     """
 
     def __init__(self, *args, **kwargs):
-        super(BatchSampler, self).__init__(*args, **kwargs)
         input_dimension = kwargs.pop('input_dimension', None)
+        super(BatchSampler, self).__init__(*args, **kwargs)
         self.input_dim = input_dimension
         self.new_input_dim = None
 
