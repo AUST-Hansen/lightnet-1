@@ -37,7 +37,7 @@ CONF_THRESH = 0.001
 NMS_THRESH = 0.5
 
 BATCH = 96
-MINI_BATCH = 8
+MINI_BATCH = 32
 
 
 class CustomDataset(ln.data.BramboxData):
@@ -141,7 +141,7 @@ def test(arguments):
             if re_ != re_seen:
                 re_seen = re_
                 re_ = int(re_ * 100.0)
-                hyperdash_plot_pr(name, pr_, now + re_, True)
+                hyperdash_plot_pr(name, pr_, now + re_, log=False)
 
     if arguments.save_det is not None:
         # Note: These detection boxes are the coordinates for the letterboxed images,

@@ -36,7 +36,7 @@ CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
 BATCH = 96
-MINI_BATCH = 8
+MINI_BATCH = 32
 MAX_BATCHES = 45000
 
 JITTER = 0.2
@@ -136,7 +136,7 @@ class VOCTrainingEngine(ln.engine.Engine):
         self.hyperdash_plot_train_loss = ln.engine.HyperdashLinePlotter(
             self.hyperdash,
             opts={
-                'Batch Size': batch_size,
+                'Batch Size': self.batch_size,
             }
         )
 
