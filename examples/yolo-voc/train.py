@@ -207,7 +207,7 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--backup', help='Backup folder', default='./backup')
     parser.add_argument('-c', '--cuda', action='store_true', help='Use cuda to speed up training')
     parser.add_argument('-v', '--visdom', action='store_true', help='Visualize training data with visdom')
-    parser.add_argument('-h', '--hyperdash', action='store_true', help='Visualize training data with hyperdash')
+    parser.add_argument('--hyperdash', '--hd', action='store_true', help='Visualize training data with hyperdash')
     args = parser.parse_args()
 
     # Parse arguments

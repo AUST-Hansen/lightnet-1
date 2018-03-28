@@ -131,10 +131,16 @@ def test(arguments):
     if arguments.visdom:
         visdom_plot_pr(np.array(pr[0]), np.array(pr[1]), name=f'mAP: {m_ap}%')
 
-    if arguments.visdom:
+    if arguments.hyperdash:
         name = f'mAP: {m_ap}%'
-        for pr, re in zip(pr[0], pr[1]):
-            hyperdash_plot_pr(name, pr, re)
+        re_seen = None
+        for index, (re_, pr_) in enumerate(sorted(zip(pr[0], pr[1]))):
+            re_ = round(re_, 2)
+            if re_ != re_seen:
+                re_seen = re_
+                re_ = int(re_ * 100.0)
+                print(re_, pr_)
+                hyperdash_plot_pr(name, pr_, re_)
 
     if arguments.save_det is not None:
         # Note: These detection boxes are the coordinates for the letterboxed images,
@@ -143,13 +149,15 @@ def test(arguments):
         bbb.generate('det_pickle', det, Path(arguments.save_det).with_suffix('.pkl'))
         #bbb.generate('anno_pickle', det, Path('anno-letterboxed_'+arguments.save_det).with_suffix('.pkl'))
 
+    if arguments.hyperdash:
+        hd.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Test a lightnet network')
     parser.add_argument('weight', help='Path to weight file', default=None)
     parser.add_argument('-c', '--cuda', action='store_true', help='Use cuda')
     parser.add_argument('-v', '--visdom', action='store_true', help='Visualize training data with visdom')
-    parser.add_argument('-h', '--hyperdash', action='store_true', help='Visualize training data with hyperdash')
+    parser.add_argument('--hyperdash', '-hd', action='store_true', help='Visualize training data with hyperdash')
     parser.add_argument('-s', '--save_det', help='Save detections as a brambox pickle file', default=None)
     args = parser.parse_args()
 
