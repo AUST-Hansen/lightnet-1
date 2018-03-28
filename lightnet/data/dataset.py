@@ -197,7 +197,9 @@ class BatchSampler(torchBatchSampler):
     def __set_input_dim(self):
         """The function randomly changes the the input dimension of the dataset."""
         if self.new_input_dim is not None:
-            log.info('Resizing network {self.new_input_dim[:2]}'.format(self=self))
+            log.info('Resizing network {size}'.format(
+                size=self.new_input_dim[:2]
+            ))
             self.input_dim = (self.new_input_dim[0], self.new_input_dim[1])
             self.new_input_dim = None
 

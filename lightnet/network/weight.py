@@ -21,7 +21,7 @@ class WeightLoader:
         with open(filename, 'rb') as fp:
             self.header = np.fromfile(fp, count=3, dtype=np.int32).tolist()
             ver_num = self.header[0] * 100 + self.header[1] * 10 + self.header[2]
-            log.debug('Loading weight file: version {self.header[0]}.{self.header[1]}.{self.header[2]}'.format(self=self))
+            log.debug('Loading weight file: version {header[0]}.{header[1]}.{header[2]}'.format(header=self.header))
 
             if ver_num <= 19:
                 log.warn('Weight file uses sizeof to compute variable size, which might lead to undefined behaviour. (choosing int=int32, float=float32)')
@@ -109,7 +109,7 @@ class WeightSaver:
 
     def write_file(self, filename):
         """Save the accumulated weights to a darknet weightfile."""
-        log.debug('Writing weight file: version {self.header[0]}.{self.header[1]}.{self.header[2]}'.format(self=self))
+        log.debug('Writing weight file: version {header[0]}.{header[1]}.{header[2]}'.format(header=self.header))
         with open(filename, 'wb') as fp:
             self.header.tofile(fp)
             self.seen.tofile(fp)
