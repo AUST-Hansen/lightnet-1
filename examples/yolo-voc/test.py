@@ -37,7 +37,7 @@ CONF_THRESH = 0.001
 NMS_THRESH = 0.5
 
 BATCH = 96
-MINI_BATCH = 32
+MINI_BATCH = 16
 
 
 class CustomDataset(ln.data.BramboxData):
