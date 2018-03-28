@@ -25,7 +25,7 @@ NMS_THRESH = .4
 
 # Functions
 def create_network():
-    """ Create the lightnet network """
+    """Create the lightnet network."""
     net = ln.models.Yolo(CLASSES, args.weight)
     net.postprocess = tf.Compose([
         ln.data.GetBoundingBoxes(net, CONF_THRESH, NMS_THRESH),
@@ -40,7 +40,7 @@ def create_network():
 
 
 def detect(net, img_path):
-    """ Perform a detection """
+    """Perform a detection."""
     # Load image
     img = cv2.imread(img_path)
     im_h, im_w = img.shape[:2]
@@ -52,7 +52,7 @@ def detect(net, img_path):
     if args.cuda:
         img_tf = img_tf.cuda()
     img_tf = torch.autograd.Variable(img_tf, volatile=True)
-    
+
     # Run detector
     out = net(img_tf)
     out = ln.data.ReverseLetterbox.apply(out, NETWORK_SIZE, (im_w, im_h))
@@ -95,13 +95,13 @@ if __name__ == '__main__':
     else:
         while True:
             try:
-                img_path = input('Enter image path: ')    
+                img_path = input('Enter image path: ')
             except (KeyboardInterrupt, EOFError):
                 print('')
                 break
-        
+
             if not os.path.isfile(img_path):
-                log.error(f'\'{img_path}\' is not a valid path')
+                log.error(f'\'{img_path}\' is not a valid path')  # NOQA
                 break
 
             image, output = detect(network, img_path)

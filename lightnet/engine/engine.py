@@ -16,9 +16,11 @@ log = logging.getLogger(__name__)
 
 
 class Engine:
-    """ This class removes the boilerplate code needed for writing your training cycle. |br|
+    """This class removes the boilerplate code needed for writing your training cycle.
+
+    |br|
     Here is the code that runs when the engine is called:
-    
+
     .. literalinclude:: /../lightnet/engine/engine.py
        :language: python
        :pyobject: Engine.__call__
@@ -39,6 +41,7 @@ class Engine:
         self.test_rate: How often to run test; Default **None**
         self.sigint: Boolean value indicating whether a SIGINT (CTRL+C) was send; Default **False**
     """
+
     __allowed_overwrite = ['batch_size', 'mini_batch_size', 'max_batches', 'test_rate']
     batch_size = 1
     mini_batch_size = 1
@@ -77,10 +80,10 @@ class Engine:
             if not hasattr(self, key) or key in self.__allowed_overwrite:
                 setattr(self, key, kwargs[key])
             else:
-                log.warn(f'{key} attribute already exists on engine. Keeping original value [{getattr(self, key)}]')
-    
+                log.warn(f'{key} attribute already exists on engine. Keeping original value [{getattr(self, key)}]')  # NOQA
+
     def __call__(self):
-        """ Start the training cycle. """
+        """Start the training cycle."""
         self.start()
         self._update_rates()
         if self.test_rate is not None:
@@ -127,7 +130,7 @@ class Engine:
 
     @property
     def batch(self):
-        """ Get current batch number.
+        """Get current batch number.
 
         Return:
             int: Computed as self.network.seen // self.batch_size
@@ -136,7 +139,7 @@ class Engine:
 
     @property
     def batch_subdivisions(self):
-        """ Get number of mini-batches per batch.
+        """Get number of mini-batches per batch.
 
         Return:
             int: Computed as self.batch_size // self.mini_batch_size
@@ -145,8 +148,8 @@ class Engine:
 
     @property
     def learning_rate(self):
-        """ Get and set the learning rate
-            
+        """Get and set the learning rate.
+
         Args:
             lr (Number): Set the learning rate for all values of optimizer.param_groups[i]['lr']
 
@@ -162,7 +165,8 @@ class Engine:
             param_group['lr'] = lr
 
     def log(self, msg):
-        """ Log messages about training and testing.
+        """Log messages about training and testing.
+
         This function will automatically prepend the messages with **TRAIN** or **TEST**.
 
         Args:
@@ -174,7 +178,8 @@ class Engine:
             self.__log.test(msg)
 
     def add_rate(self, name, steps, values, default=None):
-        """ Add a rate to the engine.
+        """Add a rate to the engine.
+
         Rates are object attributes that automatically change according to the current batch number.
 
         Args:
@@ -205,10 +210,12 @@ class Engine:
         self.__rates[name] = (steps, values)
 
     def _update_rates(self):
-        """ Update rates according to batch size. |br|
+        """Update rates according to batch size.
+
+        |br|
         This function gets automatically called every batch, and should generally not be called by the user.
         """
-        for key, (steps,values) in self.__rates.items():
+        for key, (steps, values) in self.__rates.items():
             new_rate = None
             for i in range(len(steps)):
                 if self.batch >= steps[i]:
@@ -221,29 +228,33 @@ class Engine:
                 setattr(self, key, new_rate)
 
     def start(self):
-        """ First function that gets called when starting the engine. |br|
-            Use it to create your dataloader, set the correct starting values for your rates, etc.
+        """First function that gets called when starting the engine.
+
+        |br|
+        Use it to create your dataloader, set the correct starting values for your rates, etc.
         """
         pass
 
     def process_batch(self, data):
-        """ This function should contain the code to process the forward and backward pass of one (mini-)batch. """
+        """The function should contain the code to process the forward and backward pass of one (mini-)batch."""
         log.error('process_batch() function is not implemented')
         raise NotImplementedError
 
     def train_batch(self):
-        """ This function should contain the code to update the weights of the network. |br|
+        """The function should contain the code to update the weights of the network.
+
+        |br|
         Statistical computations, performing backups at regular intervals, etc. also happen here.
         """
         log.error('train_batch() function is not implemented')
         raise NotImplementedError
 
     def test(self):
-        """ This function should contain the code to perform an evaluation on your test-set. """
+        """The function should contain the code to perform an evaluation on your test-set."""
         log.warn('test() function is not implemented')
 
     def quit(self):
-        """ This function gets called after every training epoch and decides if the training cycle continues.
+        """The function gets called after every training epoch and decides if the training cycle continues.
 
         Return:
             Boolean: Whether are not to stop the training cycle

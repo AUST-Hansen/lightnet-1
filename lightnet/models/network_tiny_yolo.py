@@ -3,9 +3,7 @@
 #   Copyright EAVISE
 #
 
-import os
 from collections import OrderedDict
-import torch
 import torch.nn as nn
 
 import lightnet.network as lnn
@@ -15,7 +13,8 @@ __all__ = ['TinyYolo']
 
 
 class TinyYolo(lnn.Darknet):
-    """ `Tiny Yolo v2`_ implementation with pytorch.
+    """`Tiny Yolo v2`_ implementation with pytorch.
+
     This network uses :class:`~lightnet.network.RegionLoss` as its loss function
     and :class:`~lightnet.data.GetBoundingBoxes` as its default postprocessing function.
 
@@ -35,8 +34,9 @@ class TinyYolo(lnn.Darknet):
 
     .. _Tiny Yolo v2: https://github.com/pjreddie/darknet/blob/777b0982322142991e1861161e68e1a01063d76f/cfg/tiny-yolo-voc.cfg
     """
-    def __init__(self, num_classes=20, weights_file=None, conf_thresh=.25, nms_thresh=.4, input_channels=3, anchors=dict(num=5, values=[1.08,1.19, 3.42,4.41, 6.63,11.38, 9.42,5.11, 16.62,10.52])):
-        """ Network initialisation """
+
+    def __init__(self, num_classes=20, weights_file=None, conf_thresh=.25, nms_thresh=.4, input_channels=3, anchors=dict(num=5, values=[1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52])):
+        """Network initialization."""
         super(TinyYolo, self).__init__()
 
         # Parameters
@@ -58,13 +58,13 @@ class TinyYolo(lnn.Darknet):
             ('9_convbatch',     lnn.layer.Conv2dBatchLeaky(128, 256, 3, 1, 1)),
             ('10_max',          nn.MaxPool2d(2, 2)),
             ('11_convbatch',    lnn.layer.Conv2dBatchLeaky(256, 512, 3, 1, 1)),
-            ('12_max',          lnn.layer.PaddedMaxPool2d(2, 1, (0,1,0,1))),
+            ('12_max',          lnn.layer.PaddedMaxPool2d(2, 1, (0, 1, 0, 1))),
             ('13_convbatch',    lnn.layer.Conv2dBatchLeaky(512, 1024, 3, 1, 1)),
             ('14_convbatch',    lnn.layer.Conv2dBatchLeaky(1024, 1024, 3, 1, 1)),
-            ('15_conv',         nn.Conv2d(1024, self.num_anchors*(5+self.num_classes), 1, 1, 0)),
+            ('15_conv',         nn.Conv2d(1024, self.num_anchors * (5 + self.num_classes), 1, 1, 0)),
         ])
         self.layers = nn.Sequential(layer_list)
 
         self.load_weights(weights_file)
-        self.loss = lnn.RegionLoss(self) 
+        self.loss = lnn.RegionLoss(self)
         self.postprocess = lnd.GetBoundingBoxes(self, conf_thresh, nms_thresh)

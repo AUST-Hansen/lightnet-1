@@ -3,7 +3,6 @@
 #   Copyright EAVISE
 #
 
-import os
 from collections import OrderedDict
 import torch
 import torch.nn as nn
@@ -15,7 +14,8 @@ __all__ = ['Yolo']
 
 
 class Yolo(lnn.Darknet):
-    """ `Yolo v2`_ implementation with pytorch.
+    """`Yolo v2`_ implementation with pytorch.
+
     This network uses :class:`~lightnet.network.RegionLoss` as its loss function
     and :class:`~lightnet.data.GetBoundingBoxes` as its default postprocessing function.
 
@@ -33,8 +33,9 @@ class Yolo(lnn.Darknet):
 
     .. _Yolo v2: https://github.com/pjreddie/darknet/blob/777b0982322142991e1861161e68e1a01063d76f/cfg/yolo-voc.cfg
     """
-    def __init__(self, num_classes=20, weights_file=None, conf_thresh=.25, nms_thresh=.4, input_channels=3, anchors=dict(num=5, values=[1.3221,1.73145,3.19275,4.00944,5.05587,8.09892,9.47112,4.84053,11.2364,10.0071])):
-        """ Network initialisation """
+
+    def __init__(self, num_classes=20, weights_file=None, conf_thresh=.25, nms_thresh=.4, input_channels=3, anchors=dict(num=5, values=[1.3221, 1.73145, 3.19275, 4.00944, 5.05587, 8.09892, 9.47112, 4.84053, 11.2364, 10.0071])):
+        """Network initialization."""
         super(Yolo, self).__init__()
 
         # Parameters
@@ -86,19 +87,19 @@ class Yolo(lnn.Darknet):
 
             # Sequence 3 : input = sequence2 + sequence1
             OrderedDict([
-                ('28_convbatch',    lnn.layer.Conv2dBatchLeaky((4*64)+1024, 1024, 3, 1, 1)),
-                ('29_conv',         nn.Conv2d(1024, self.num_anchors*(5+self.num_classes), 1, 1, 0)),
+                ('28_convbatch',    lnn.layer.Conv2dBatchLeaky((4 * 64) + 1024, 1024, 3, 1, 1)),
+                ('29_conv',         nn.Conv2d(1024, self.num_anchors * (5 + self.num_classes), 1, 1, 0)),
             ])
         ]
         self.layers = nn.ModuleList([nn.Sequential(layer_dict) for layer_dict in layer_list])
 
         self.load_weights(weights_file)
-        self.loss = lnn.RegionLoss(self) 
+        self.loss = lnn.RegionLoss(self)
         self.postprocess = lnd.GetBoundingBoxes(self, conf_thresh, nms_thresh)
 
     def _forward(self, x):
         outputs = []
-    
+
         outputs.append(self.layers[0](x))
         outputs.append(self.layers[1](outputs[0]))
         # Route : layers=-9
