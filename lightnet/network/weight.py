@@ -21,7 +21,7 @@ class WeightLoader:
         with open(filename, 'rb') as fp:
             self.header = np.fromfile(fp, count=3, dtype=np.int32).tolist()
             ver_num = self.header[0] * 100 + self.header[1] * 10 + self.header[2]
-            log.debug(f'Loading weight file: version {self.header[0]}.{self.header[1]}.{self.header[2]}')  # NOQA
+            log.debug('Loading weight file: version {self.header[0]}.{self.header[1]}.{self.header[2]}'.format(self=self))
 
             if ver_num <= 19:
                 log.warn('Weight file uses sizeof to compute variable size, which might lead to undefined behaviour. (choosing int=int32, float=float32)')
@@ -47,7 +47,7 @@ class WeightLoader:
         elif type(layer) == nn.Linear:
             self._load_fc(layer)
         else:
-            raise NotImplementedError(f'The layer you are trying to load is not supported [{type(layer)}]')
+            raise NotImplementedError('The layer you are trying to load is not supported [{type_}]'.format(type_=type(layer)))
 
     def _load_conv(self, model):
         num_b = model.bias.numel()
@@ -109,13 +109,13 @@ class WeightSaver:
 
     def write_file(self, filename):
         """Save the accumulated weights to a darknet weightfile."""
-        log.debug(f'Writing weight file: version {self.header[0]}.{self.header[1]}.{self.header[2]}')
+        log.debug('Writing weight file: version {self.header[0]}.{self.header[1]}.{self.header[2]}'.format(self=self))
         with open(filename, 'wb') as fp:
             self.header.tofile(fp)
             self.seen.tofile(fp)
             for np_arr in self.weights:
                 np_arr.tofile(fp)
-        log.info(f'Weight file saved as {filename}')
+        log.info('Weight file saved as {filename}'.format(filename=filename))
 
     def save_layer(self, layer):
         """Save weights for a layer."""
@@ -126,7 +126,7 @@ class WeightSaver:
         elif type(layer) == nn.Linear:
             self._save_fc(layer)
         else:
-            raise NotImplementedError(f'The layer you are trying to save is not supported [{type(layer)}]')
+            raise NotImplementedError('The layer you are trying to save is not supported [{type_}]'.format(type_=type(layer)))
 
     def _save_conv(self, model):
         self.weights.append(model.bias.cpu().data.numpy())

@@ -14,7 +14,7 @@ import visdom
 import hyperdash
 import torch
 from torchvision import transforms as tf
-import brambox.boxes as bbb
+# import brambox.boxes as bbb
 import lightnet as ln
 
 log = logging.getLogger('lightnet.train')
@@ -26,7 +26,7 @@ log = logging.getLogger('lightnet.train')
 WORKERS = 20
 PIN_MEM = True
 ROOT = 'data'
-TRAINFILE = f'{ROOT}/train.pkl'  # NOQA
+TRAINFILE = '{ROOT}/train.pkl'.format(ROOT=ROOT)
 VISDOM_PORT = 8097
 
 CLASSES = 20
@@ -63,7 +63,7 @@ RS_RATES = []
 class VOCDataset(ln.data.BramboxData):
     def __init__(self, anno):
         def identify(img_id):
-            return f'{ROOT}/VOCdevkit/{img_id}'
+            return '{ROOT}/VOCdevkit/{img_id}'.format(ROOT=ROOT, img_id=img_id)
 
         lb  = ln.data.Letterbox(dataset=self)
         rf  = ln.data.RandomFlip(FLIP)
@@ -174,10 +174,21 @@ class VOCTrainingEngine(ln.engine.Engine):
 
         if CLASSES > 1:
             self.visdom_plot_train_loss(np.array([[tot, coord, conf, cls]]), np.array([self.batch]))
-            self.log(f'{self.batch} Loss:{round(tot, 5)} (Coord:{round(coord, 2)} Conf:{round(conf, 2)} Cls:{round(cls, 2)})')
+            self.log('{self.batch} Loss:{tot:0.05f} (Coord:{coord:0.02f} Conf:{conf:0.02f} Cls:{cls:0.02f})'.format(
+                self=self,
+                tot=tot,
+                coord=coord,
+                conf=conf,
+                cls=cls
+            ))
         else:
             self.visdom_plot_train_loss(np.array([[tot, coord, conf]]), np.array([self.batch]))
-            self.log(f'{self.batch} Loss:{round(tot, 5)} (Coord:{round(coord, 2)} Conf:{round(conf, 2)})')
+            self.log('{self.batch} Loss:{tot:0.05f} (Coord:{coord:0.02f} Conf:{conf:0.02f})'.format(
+                self=self,
+                tot=tot,
+                coord=coord,
+                conf=conf
+            ))
 
         self.hyperdash_plot_train_loss('Loss Total', tot, log=False)
         self.hyperdash_plot_train_loss('Loss Coordinate', coord, log=False)
@@ -185,17 +196,17 @@ class VOCTrainingEngine(ln.engine.Engine):
         self.hyperdash_plot_train_loss('Loss Class', cls, log=False)
 
         if self.batch % self.backup_rate == 0:
-            self.network.save_weights(os.path.join(self.backup_folder, f'weights_{self.batch}.pt'))
+            self.network.save_weights(os.path.join(self.backup_folder, 'weights_{self.batch}.pt'.format(self=self)))
 
         if self.batch % self.resize_rate == 0:
             self.dataloader.change_input_dim()
 
     def quit(self):
         if self.sigint:
-            self.network.save_weights(os.path.join(self.backup_folder, f'backup.pt'))
+            self.network.save_weights(os.path.join(self.backup_folder, 'backup.pt'))
             return True
         elif self.batch >= self.max_batches:
-            self.network.save_weights(os.path.join(self.backup_folder, f'final.pt'))
+            self.network.save_weights(os.path.join(self.backup_folder, 'final.pt'))
             return True
         else:
             return False
@@ -243,7 +254,11 @@ if __name__ == '__main__':
     t2 = time.time()
     b2 = eng.batch
 
-    print(f'\nDuration of {b2-b1} batches: {t2-t1} seconds [{round((t2-t1)/(b2-b1), 3)} sec/batch]')
+    print('\nDuration of {duration} batches: {batches} seconds [{seconds:0.03f} sec/batch]'.format(
+        duration=b2 - b1,
+        batches=t2 - t1,
+        seconds=(t2 - t1) / (b2 - b1),
+    ))
 
-    if self.hyperdash_plot_train_loss is not None:
-        self.hyperdash_plot_train_loss.close()
+    if eng.hyperdash_plot_train_loss is not None:
+        eng.hyperdash_plot_train_loss.close()

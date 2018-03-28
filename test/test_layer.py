@@ -93,7 +93,7 @@ class TestReorg(unittest.TestCase):
         """
         #t1 = time.time()
         output = self.reorg.forward(self.input)
-        #print(f'CPU: {time.time()-t1}')
+        #print('CPU: {time}'.format(time=time.time()-t1))
         self.assertEqual(output.size(), torch.Size([1, 32, 4, 4]))
 
     def test_dimensions_forward_cuda(self):
@@ -105,7 +105,7 @@ class TestReorg(unittest.TestCase):
         #t1 = time.time()
         output = self.reorg.forward(self.input)
         #torch.cuda.synchronize()
-        #print(f'GPU: {time.time()-t1}')
+        #print('GPU: {time}'.format(time=time.time()-t1))
         self.assertEqual(output.size(), torch.Size([1, 32, 4, 4]))
 
     def test_forward_cpu(self):

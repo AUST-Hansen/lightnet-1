@@ -4,10 +4,8 @@
 #   Copyright EAVISE
 #
 import logging
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Function
 
 """
 .. Note::
@@ -38,7 +36,7 @@ class PaddedMaxPool2d(nn.Module):
         self.dilation = dilation
 
     def __repr__(self):
-        return f'{self.__class__.__name__} (kernel_size={self.kernel_size}, stride={self.stride}, padding={self.padding}, dilation={self.dilation})'  # NOQA
+        return '{self.__class__.__name__} (kernel_size={self.kernel_size}, stride={self.stride}, padding={self.padding}, dilation={self.dilation})'.format(self=self)
 
     def forward(self, x):
         x = F.max_pool2d(F.pad(x, self.padding, mode='replicate'), self.kernel_size, self.stride, 0, self.dilation)
@@ -57,13 +55,13 @@ class Reorg(nn.Module):
     def __init__(self, stride=2):
         super(Reorg, self).__init__()
         if not isinstance(stride, int):
-            log.error(f'stride is not an int [{type(stride)}]')
+            log.error('stride is not an int [{type}]'.format(type_=type(stride)))
             raise TypeError
         self.stride = stride
         self.darknet = True
 
     def __repr__(self):
-        return f'{self.__class__.__name__} (stride={self.stride}, darknet_compatible_mode={self.darknet})'
+        return '{self.__class__.__name__} (stride={self.stride}, darknet_compatible_mode={self.darknet})'.format(self=self)
 
     def forward(self, x):
         assert(x.data.dim() == 4)
@@ -73,10 +71,10 @@ class Reorg(nn.Module):
         W = x.data.size(3)
 
         if H % self.stride != 0:
-            log.error(f'Dimension mismatch: {H} is not divisible by {self.stride}')
+            log.error('Dimension mismatch: {H} is not divisible by {self.stride}'.format(H=H, self=self))
             raise ValueError
         if W % self.stride != 0:
-            log.error(f'Dimension mismatch: {W} is not divisible by {self.stride}')
+            log.error('Dimension mismatch: {W} is not divisible by {self.stride}'.format(W=W, self=self))
             raise ValueError
 
         # darknet compatible version from: https://github.com/thtrieu/darkflow/issues/173#issuecomment-296048648

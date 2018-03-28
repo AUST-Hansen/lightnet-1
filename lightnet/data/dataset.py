@@ -9,7 +9,6 @@ import random
 import logging
 from PIL import Image
 import torch
-import torch.multiprocessing as multiprocessing
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.sampler import BatchSampler as torchBatchSampler
 from torch.utils.data.dataloader import DataLoader as torchDataLoader
@@ -51,19 +50,19 @@ class BramboxData(Dataset):
 
         # Add class_ids
         if class_label_map is None:
-            log.warn(f'No class_label_map given, annotations wont have a class_id values for eg. loss function')  # NOQA
+            log.warn('No class_label_map given, annotations wont have a class_id values for eg. loss function')
         for k, annos in self.annos.items():
             for a in annos:
                 if class_label_map is not None:
                     try:
                         a.class_id = class_label_map.index(a.class_label)
                     except ValueError:
-                        log.error(f'{a.class_label} is not found in the class_label_map')
+                        log.error('{a.class_label} is not found in the class_label_map'.format(a=a))
                         raise
                 else:
                     a.class_id = 0
 
-        log.info(f'Dataset loaded: {len(self.keys)} images')
+        log.info('Dataset loaded: {len} images'.format(len=len(self.keys)))
 
     def __len__(self):
         return len(self.keys)
@@ -74,7 +73,7 @@ class BramboxData(Dataset):
             self._input_dim = index[0]
             index = index[1]
         if index >= len(self):
-            log.error(f'list index out of range [{index}/{len(self)-1}]')
+            log.error('list index out of range [{index}/{len}]'.format(index=index, len=len(self) - 1))
             raise IndexError
 
         # Load
@@ -183,7 +182,7 @@ class BatchSampler(torchBatchSampler):
     whilst ensuring it stays the same across one mini-batch.
     """
 
-    def __init__(self, *args, input_dimension=None, **kwargs):
+    def __init__(self, input_dimension=None, *args, **kwargs):
         super(BatchSampler, self).__init__(*args, **kwargs)
         self.input_dim = input_dimension
         self.new_input_dim = None
@@ -197,7 +196,7 @@ class BatchSampler(torchBatchSampler):
     def __set_input_dim(self):
         """The function randomly changes the the input dimension of the dataset."""
         if self.new_input_dim is not None:
-            log.info(f'Resizing network {self.new_input_dim[:2]}')
+            log.info('Resizing network {self.new_input_dim[:2]}'.format(self=self))
             self.input_dim = (self.new_input_dim[0], self.new_input_dim[1])
             self.new_input_dim = None
 

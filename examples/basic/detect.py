@@ -101,7 +101,7 @@ if __name__ == '__main__':
                 break
 
             if not os.path.isfile(img_path):
-                log.error(f'\'{img_path}\' is not a valid path')  # NOQA
+                log.error('\'{img_path}\' is not a valid path'.format(img_path=img_path))
                 break
 
             image, output = detect(network, img_path)

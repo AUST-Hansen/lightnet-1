@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image, ImageOps
 import brambox.boxes as bbb
 
-from .process import *
+from .process import *  # NOQA
 log = logging.getLogger(__name__)
 
 try:
@@ -58,7 +58,7 @@ class Letterbox(BaseMultiTransform):
         elif isinstance(data, np.ndarray):
             return self._tf_cv(data)
         else:
-            log.error(f'Letterbox only works with <brambox annotation lists>, <PIL images> or <OpenCV images> [{type(data)}]')  # NOQA
+            log.error('Letterbox only works with <brambox annotation lists>, <PIL images> or <OpenCV images> [{type_}]'.format(type_=type(data)))
             raise TypeError
 
     def _tf_pil(self, img):
@@ -175,7 +175,7 @@ class RandomCrop(BaseMultiTransform):
         elif isinstance(data, np.ndarray):
             return self._tf_cv(data)
         else:
-            log.error(f'RandomCrop only works with <brambox annotation lists>, <PIL images> or <OpenCV images> [{type(data)}]')
+            log.error('RandomCrop only works with <brambox annotation lists>, <PIL images> or <OpenCV images> [{type_}]'.format(type_=type(data)))
             raise TypeError
 
     def _tf_pil(self, img):
@@ -280,7 +280,7 @@ class RandomFlip(BaseMultiTransform):
         elif isinstance(data, np.ndarray):
             return self._tf_cv(data)
         else:
-            log.error(f'RandomFlip only works with <brambox annotation lists>, <PIL images> or <OpenCV images> [{type(data)}]')
+            log.error('RandomFlip only works with <brambox annotation lists>, <PIL images> or <OpenCV images> [{type_}]'.format(type_=type(data)))
             raise TypeError
 
     def _tf_pil(self, img):
@@ -305,7 +305,7 @@ class RandomFlip(BaseMultiTransform):
     def _tf_anno(self, anno):
         """Change coordinates of an annotation, according to the previous flip."""
         if not isinstance(anno, bbb.annotations.Annotation):
-            log.error(f'RandomFlip only works with lists of <brambox annotations> [{type(anno)}]')
+            log.error('RandomFlip only works with lists of <brambox annotations> [{type_}]'.format(type_=type(annot)))
             raise TypeError
 
         if self.flip and self.im_w is not None:
@@ -350,7 +350,7 @@ class HSVShift(BaseTransform):
         elif isinstance(data, np.ndarray):
             return cls._tf_cv(data, dh, ds, dv)
         else:
-            log.error(f'HSVShift only works with <PIL images> or <OpenCV images> [{type(data)}]')
+            log.error('HSVShift only works with <PIL images> or <OpenCV images> [{type_}]'.format(type_=type(data)))
             raise TypeError
 
     @staticmethod
@@ -434,7 +434,7 @@ class BramboxToTensor(BaseTransform):
     @classmethod
     def apply(cls, data, dimension, max_anno=None, class_label_map=None):
         if not isinstance(data, collections.Sequence):
-            log.error(f'BramboxToTensor only works with <brambox annotation list> [{type(data)}]')
+            log.error('BramboxToTensor only works with <brambox annotation list> [{type_}]'.format(type_=type(data)))
             raise TypeError
 
         anno_np = np.array([cls._tf_anno(anno, dimension, class_label_map) for anno in data], dtype=np.float64)
@@ -442,7 +442,7 @@ class BramboxToTensor(BaseTransform):
         if max_anno is not None:
             anno_len = len(data)
             if anno_len > max_anno:
-                log.error(f'More annotations than maximum allowed [{anno_len}/{max_anno}]')
+                log.error('More annotations than maximum allowed [{anno_len}/{max_anno}]'.format(annot_len=anno_len, max_anno=max_anno))
                 raise ValueError
 
             z_np = np.zeros((max_anno - anno_len, 5), dtype=np.float64)

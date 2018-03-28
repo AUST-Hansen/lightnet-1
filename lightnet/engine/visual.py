@@ -4,8 +4,6 @@
 #
 
 import logging
-import numpy as np
-import brambox.boxes as bbb
 
 
 __all__ = ['VisdomLinePlotter', 'HyperdashLinePlotter']
@@ -72,10 +70,10 @@ class VisdomLinePlotter:
             if 'legend' not in opts:
                 opts['legend'] = [name]
             self.vis.line(y, x, self.win, self.env, opts, name=name)
-            log.debug(f'Created new visdom window [{self.win}]')  # NOQA
+            log.debug('Created new visdom window [{self.win}]'.format(self=self))
         else:
             self.vis.line(y, x, self.win, self.env, opts, update, name)
-            log.debug(f'Updated visdom window [{self.win}]')
+            log.debug('Updated visdom window [{self.win}]'.format(self=self))
 
     def clear(self, name=None):
         """Clear the traces that were used with this lineplotter.

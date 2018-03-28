@@ -4,11 +4,9 @@
 #   Example: Test Yolo on Pascal VOC
 #
 
-import os
 import argparse
 import logging
 from pathlib import Path
-from statistics import mean
 import numpy as np
 from tqdm import tqdm
 import visdom
@@ -28,7 +26,7 @@ ln.logger.setLogFile('best_pr.log', filemode='a')           # Enable logging of 
 WORKERS = 20
 PIN_MEM = True
 ROOT = 'data'
-TESTFILE = f'{ROOT}/test.pkl'  # NOQA
+TESTFILE = '{ROOT}/test.pkl'.format(ROOT=ROOT)
 
 CLASSES = 20
 LABELS = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
@@ -43,7 +41,7 @@ MINI_BATCH = 16
 class CustomDataset(ln.data.BramboxData):
     def __init__(self, anno, network):
         def identify(img_id):
-            return f'{ROOT}/VOCdevkit/{img_id}'
+            return '{ROOT}/VOCdevkit/{img_id}'.format(ROOT=ROOT, img_id=img_id)
 
         lb  = ln.data.Letterbox(NETWORK_SIZE)
         it  = tf.ToTensor()
@@ -97,7 +95,6 @@ def test(arguments):
     conf_loss = []
     cls_loss = []
     anno, det = {}, {}
-    num_det = 0
 
     for idx, (data, box) in enumerate(tqdm(loader, total=len(loader))):
         if arguments.cuda:
@@ -125,16 +122,16 @@ def test(arguments):
     conf = round(sum(conf_loss) / len(anno), 2)
     if len(cls_loss) > 0:
         cls = round(sum(cls_loss) / len(anno), 2)
-        log.test(f'{net.seen//BATCH} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf} Cls:{cls})')
+        log.test('{seen} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf} Cls:{cls})'.format(seen=net.seen // BATCH, m_ap=m_ap, tot=tot, coord=coord, conf=conf, cls=cls))
     else:
-        log.test(f'{net.seen//BATCH} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf})')
+        log.test('{seen} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf})'.format(seen=net.seen // BATCH, m_ap=m_ap, tot=tot, coord=coord, conf=conf))
 
+    name = 'mAP: {m_ap}%'.format(m_ap=m_ap)
     if arguments.visdom:
-        visdom_plot_pr(np.array(pr[0]), np.array(pr[1]), name=f'mAP: {m_ap}%')
+        visdom_plot_pr(np.array(pr[0]), np.array(pr[1]), name=name)
 
     if arguments.hyperdash:
         now = time.time()
-        name = f'mAP: {m_ap}%'
         re_seen = None
         for index, (re_, pr_) in enumerate(sorted(zip(pr[1], pr[0]))):
             re_ = round(re_, 2)

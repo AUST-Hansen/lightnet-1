@@ -184,13 +184,13 @@ class TrainingEngine(ln.engine.Engine):
 
         if CLASSES > 1:
             self.plot_train_loss(np.array([[tot, coord, conf, cls]]), np.array([self.batch]))
-            self.log(f'{self.batch} Loss:{round(tot, 5)} (Coord:{round(coord, 2)} Conf:{round(conf, 2)} Cls:{round(cls, 2)})')  # NOQA
+            self.log('{self.batch} Loss:{tot:0.05f} (Coord:{coord:0.02f} Conf:{conf:0.02f}) Cls:{cls:0.02f})'.format(self=self, tot=tot, coord=coord, conf=conf, cls=cls))
         else:
             self.plot_train_loss(np.array([[tot, coord, conf]]), np.array([self.batch]))
-            self.log(f'{self.batch} Loss:{round(tot, 5)} (Coord:{round(coord, 2)} Conf:{round(conf, 2)})')
+            self.log('{self.batch} Loss:{tot:0.05f} (Coord:{coord:0.02f} Conf:{conf:0.02f})'.format(self=self, tot=tot, coord=coord, conf=conf))
 
         if self.batch % self.backup_rate == 0:
-            self.network.save_weights(os.path.join(self.backup_folder, f'weights_{self.batch}.pt'))
+            self.network.save_weights(os.path.join(self.backup_folder, 'weights_{self.batch}.pt'.format(self=self)))
 
         if self.batch % self.resize_rate == 0:
             self.dataloader.change_input_dim()
@@ -198,7 +198,6 @@ class TrainingEngine(ln.engine.Engine):
     def test(self):
         tot_loss = []
         anno, det = {}, {}
-        num_det = 0
 
         for idx, (data, target) in enumerate(self.testloader):
             if self.cuda:
@@ -218,10 +217,10 @@ class TrainingEngine(ln.engine.Engine):
         pr = bbb.pr(det, anno)
         m_ap = bbb.ap(*pr)
         loss = round(sum(tot_loss) / len(anno), 5)
-        self.log(f'Loss:{loss} mAP:{round(m_ap*100, 2)}%')
+        self.log('Loss:{loss} mAP:{m_ap:0.02f}%'.format(loss, m_ap=m_ap * 100.0))
         self.plot_test_loss(np.array([loss]), np.array([self.batch]))
         self.plot_test_pr.clear()
-        self.plot_test_pr(np.array(pr[0]), np.array(pr[1]), update='replace', name=f'{self.batch} - {round(m_ap*100,2)}%')
+        self.plot_test_pr(np.array(pr[0]), np.array(pr[1]), update='replace', name='{self.batch} - {m_ap:0.02f}%'.format(self=self, m_ap=m_ap * 100.0))
 
 
 if __name__ == '__main__':

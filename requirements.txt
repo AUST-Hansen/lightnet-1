@@ -1,4 +1,4 @@
 # Runtime dependencies
-git+https://gitlab.com/EAVISE/brambox
+git+https://github.com/WildbookOrg/brambox
 
 .[visual]

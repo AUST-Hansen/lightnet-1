@@ -61,7 +61,7 @@ class Darknet(nn.Module):
                 x = module(x)
             return x
         else:
-            log.error(f'No _forward function defined and no default behaviour for this type of layers [{type(self.layers)}]')  # NOQA
+            log.error('No _forward function defined and no default behaviour for this type of layers [{type_}]'.format(type_=type(self.layers)))
             raise NotImplementedError
 
     def forward(self, x, target=None):
@@ -115,7 +115,7 @@ class Darknet(nn.Module):
 
         for module in mod.children():
             if isinstance(module, (nn.ModuleList, nn.Sequential)):
-                yield from self.modules_recurse(module)
+                yield from self.modules_recurse(module)  # NOQA
             else:
                 yield module
 
@@ -185,12 +185,12 @@ class Darknet(nn.Module):
         for module in self.modules_recurse():
             try:
                 weights.load_layer(module)
-                log.info(f'Layer loaded: {module}')
+                log.info('Layer loaded: {module}'.format(module=module))
                 if weights.start >= weights.size:
-                    log.debug(f'Finished loading weights [{weights.start}/{weights.size} weights]')
+                    log.debug('Finished loading weights [{weights.start}/{weights.size} weights]'.format(weights=weights))
                     break
             except NotImplementedError:
-                log.info(f'Layer skipped: {module.__class__.__name__}')
+                log.info('Layer skipped: {module.__class__.__name__}'.format(module=module))
 
     def _save_darknet_weights(self, weights_file):
         weights = WeightSaver(self.header, self.seen)
@@ -198,9 +198,9 @@ class Darknet(nn.Module):
         for module in self.modules_recurse():
             try:
                 weights.save_layer(module)
-                log.info(f'Layer saved: {module}')
+                log.info('Layer saved: {module}'.format(module=module))
             except NotImplementedError:
-                log.info(f'Layer skipped: {module.__class__.__name__}')
+                log.info('Layer skipped: {module.__class__.__name__}'.format(module=module))
 
         weights.write_file(weights_file)
 
@@ -226,4 +226,4 @@ class Darknet(nn.Module):
             'weights': self.state_dict()
         }
         torch.save(state, weights_file)
-        log.info(f'Weight file saved as {weights_file}')
+        log.info('Weight file saved as {weights_file}'.format(weights_file=weights_file))

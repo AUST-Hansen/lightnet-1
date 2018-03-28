@@ -4,7 +4,6 @@
 #   Example: Transform annotations for VOCdevkit to the brambox pickle format
 #
 
-import sys
 import xml.etree.ElementTree as ET
 import brambox.boxes as bbb
 
@@ -27,19 +26,25 @@ def identify(xml_file):
     root = ET.parse(xml_file).getroot()
     folder = root.find('folder').text
     filename = root.find('filename').text
-    return f'{folder}/JPEGImages/{filename}'  # NOQA
+    return '{folder}/JPEGImages/{filename}'.format(folder=folder, filename=filename)
 
 
 if __name__ == '__main__':
     print('Getting training annotation filenames')
     train = []
     for (year, img_set) in TRAINSET:
-        with open(f'{ROOT}/VOCdevkit/VOC{year}/ImageSets/Main/{img_set}.txt', 'r') as f:
+        filename = '{ROOT}/VOCdevkit/VOC{year}/ImageSets/Main/{img_set}.txt'.format(ROOT=ROOT, year=year, img_set=img_set)
+        with open(filename, 'r') as f:
             ids = f.read().strip().split()
-        train += [f'{ROOT}/VOCdevkit/VOC{year}/Annotations/{xml_id}.xml' for xml_id in ids]
+        train += [
+            '{ROOT}/VOCdevkit/VOC{year}/Annotations/{xml_id}.xml'.format(ROOT=ROOT, year=year, xml_id=xml_id)
+            for xml_id in ids
+        ]
 
     if DEBUG:
-        print(f'\t{len(train)} xml files')
+        print('\t{len} xml files'.format(
+            len=len(train),
+        ))
 
     print('Parsing training annotation files')
     train_annos = bbb.parse('anno_pascalvoc', train, identify)
@@ -50,22 +55,28 @@ if __name__ == '__main__':
                 del annos[i]
 
     print('Generating training annotation file')
-    bbb.generate('anno_pickle', train_annos, f'{ROOT}/train.pkl')
+    bbb.generate('anno_pickle', train_annos, '{ROOT}/train.pkl'.format(ROOT=ROOT))
 
     print()
 
     print('Getting testing annotation filenames')
     test = []
     for (year, img_set) in TESTSET:
-        with open(f'{ROOT}/VOCdevkit/VOC{year}/ImageSets/Main/{img_set}.txt', 'r') as f:
+        filename = '{ROOT}/VOCdevkit/VOC{year}/ImageSets/Main/{img_set}.txt'.format(ROOT=ROOT, year=year, img_set=img_set)
+        with open(filename, 'r') as f:
             ids = f.read().strip().split()
-        test += [f'{ROOT}/VOCdevkit/VOC{year}/Annotations/{xml_id}.xml' for xml_id in ids]
+        test += [
+            '{ROOT}/VOCdevkit/VOC{year}/Annotations/{xml_id}.xml'.format(ROOT=ROOT, year=year, xml_id=xml_id)
+            for xml_id in ids
+        ]
 
     if DEBUG:
-        print(f'\t{len(test)} xml files')
+        print('\t{len} xml files'.format(
+            len=len(train),
+        ))
 
     print('Parsing testing annotation files')
     test_annos = bbb.parse('anno_pascalvoc', test, identify)
 
     print('Generating testing annotation file')
-    bbb.generate('anno_pickle', test_annos, f'{ROOT}/test.pkl')
+    bbb.generate('anno_pickle', test_annos, '{ROOT}/test.pkl'.format(ROOT))

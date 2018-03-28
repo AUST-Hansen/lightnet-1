@@ -5,11 +5,9 @@
 #            This example script uses darknet type annotations
 #
 
-import os
 import argparse
 import logging
 from pathlib import Path
-from statistics import mean
 import numpy as np
 from tqdm import tqdm
 import visdom
@@ -72,7 +70,6 @@ def test(arguments):
     conf_loss = []
     cls_loss = []
     anno, det = {}, {}
-    num_det = 0
 
     for idx, (data, box) in enumerate(tqdm(loader, total=len(loader))):
         if arguments.cuda:
@@ -100,12 +97,12 @@ def test(arguments):
     conf = round(sum(conf_loss) / len(anno), 2)
     if len(cls_loss) > 0:
         cls = round(sum(cls_loss) / len(anno), 2)
-        log.test(f'{net.seen//BATCH} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf} Cls:{cls})')  # NOQA
+        log.test('{seen} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf} Cls:{cls})'.format(seen=net.seen // BATCH, m_ap=m_ap, tot=tot, coord=coord, conf=conf, cls=cls))
     else:
-        log.test(f'{net.seen//BATCH} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf})')
+        log.test('{seen} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf})'.format(seen=net.seen // BATCH, m_ap=m_ap, tot=tot, coord=coord, conf=conf))
 
     if arguments.visdom:
-        plot_pr(np.array(pr[0]), np.array(pr[1]), name=f'{net.seen//BATCH}: {m_ap}%')
+        plot_pr(np.array(pr[0]), np.array(pr[1]), name='{seen}: {m_ap}%'.format(seen=net.seen // BATCH, m_ap=m_ap))
 
     if arguments.save_det is not None:
         # Note: These detection boxes are the coordinates for the letterboxed images,

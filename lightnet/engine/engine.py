@@ -3,11 +3,8 @@
 #   Copyright EAVISE
 #
 
-import sys
 import logging
 import signal
-from statistics import mean
-import torch
 
 import lightnet as ln
 
@@ -80,7 +77,10 @@ class Engine:
             if not hasattr(self, key) or key in self.__allowed_overwrite:
                 setattr(self, key, kwargs[key])
             else:
-                log.warn(f'{key} attribute already exists on engine. Keeping original value [{getattr(self, key)}]')  # NOQA
+                log.warn('{key} attribute already exists on engine. Keeping original value [{attr}]'.format(
+                    key=key,
+                    attr=getattr(self, key)
+                ))
 
     def __call__(self):
         """Start the training cycle."""
@@ -197,15 +197,15 @@ class Engine:
         if default is not None or not hasattr(self, name):
             setattr(self, name, default)
         if name in self.__rates:
-            log.warn(f'{name} rate was already used, overwriting...')
+            log.warn('{name} rate was already used, overwriting...'.format(name=name))
 
         if len(steps) > len(values):
             diff = len(steps) - len(values)
             values = values + diff * [values[-1]]
-            log.warn(f'{name} has more steps than values, extending values to {values}')
+            log.warn('{name} has more steps than values, extending values to {values}'.format(name=name, values=values))
         elif len(steps) < len(values):
             values = values[:len(steps)]
-            log.warn(f'{name} has more values than steps, shortening values to {values}')
+            log.warn('{name} has more values than steps, shortening values to {values}'.format(name=name, values=values))
 
         self.__rates[name] = (steps, values)
 
@@ -224,7 +224,7 @@ class Engine:
                     break
 
             if new_rate is not None and new_rate != getattr(self, key):
-                log.info(f'Adjusting {key} [{new_rate}]')
+                log.info('Adjusting {key} [{new_rate}]'.format(key=key, new_rate=new_rate))
                 setattr(self, key, new_rate)
 
     def start(self):
