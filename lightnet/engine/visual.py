@@ -101,7 +101,7 @@ class VisdomLinePlotter:
             self.vis.close(self.win, self.env)
 
 
-class HyperdashLinePlotter
+class HyperdashLinePlotter:
     """Wrapper to easily plot curves and lines in hyperdash.
 
     Args:
@@ -128,7 +128,7 @@ class HyperdashLinePlotter
             self.hd.param(opt, val)
 
     def __call__(self, name, y, x=None, log=True):
-        """Add point to a specified line with given name
+        """Add point to a specified line with given name.
 
         Args:
             name (str): Name of the value you want to plot
@@ -156,4 +156,3 @@ class HyperdashLinePlotter
             return
 
         self.hd.end()
-
