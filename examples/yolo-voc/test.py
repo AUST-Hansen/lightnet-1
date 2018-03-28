@@ -136,7 +136,7 @@ def test(arguments):
         now = time.time()
         name = f'mAP: {m_ap}%'
         re_seen = None
-        for index, (re_, pr_) in enumerate(sorted(zip(pr[0], pr[1]))):
+        for index, (pr_, re_) in enumerate(sorted(zip(pr[0], pr[1]))):
             re_ = round(re_, 2)
             if re_ != re_seen:
                 re_seen = re_
