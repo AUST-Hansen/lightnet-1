@@ -44,9 +44,10 @@ class ColoredFormatter(logging.Formatter):
 
     def format(self, record):
         record = copy.copy(record)
+        color = self.color
         levelname = record.levelname
         if self.color:
-            record.levelname = '{ColorCode.BOLD.value}{color.value}{levelname:10}{ColorCode.RESET.value}'.format(ColorCode=ColorCode)
+            record.levelname = '{ColorCode.BOLD.value}{color.value}{levelname:10}{ColorCode.RESET.value}'.format(ColorCode=ColorCode, color=color, levelname=levelname)
         else:
             record.levelname = '{levelname:10}'.format(levelname=levelname)
         return logging.Formatter.format(self, record)
