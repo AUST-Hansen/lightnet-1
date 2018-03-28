@@ -149,7 +149,7 @@ if __name__ == '__main__':
     parser.add_argument('weight', help='Path to weight file', default=None)
     parser.add_argument('-c', '--cuda', action='store_true', help='Use cuda')
     parser.add_argument('-v', '--visdom', action='store_true', help='Visualize training data with visdom')
-    parser.add_argument('-v', '--hyperdash', action='store_true', help='Visualize training data with hyperdash')
+    parser.add_argument('-h', '--hyperdash', action='store_true', help='Visualize training data with hyperdash')
     parser.add_argument('-s', '--save_det', help='Save detections as a brambox pickle file', default=None)
     args = parser.parse_args()
 
