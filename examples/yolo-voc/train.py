@@ -22,11 +22,11 @@ log = logging.getLogger('lightnet.train')
 #ln.logger.setConsoleColor(False)                           # Disable colored terminal output
 
 # Parameters
-WORKERS = 8
+WORKERS = 20
 PIN_MEM = True
 ROOT = 'data'
 TRAINFILE = f'{ROOT}/train.pkl'
-VISDOM_PORT = 8080
+VISDOM_PORT = 8097
 
 CLASSES = 20
 LABELS = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
@@ -34,7 +34,7 @@ NETWORK_SIZE = (416, 416)
 CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
-BATCH = 64 
+BATCH = 96
 MINI_BATCH = 8
 MAX_BATCHES = 45000
 
@@ -62,7 +62,7 @@ RS_RATES = []
 class VOCDataset(ln.data.BramboxData):
     def __init__(self, anno):
         def identify(img_id):
-            return f'{ROOT}/VOCdevkit/{img_id}.jpg'
+            return f'{ROOT}/VOCdevkit/{img_id}'
 
         lb  = ln.data.Letterbox(dataset=self)
         rf  = ln.data.RandomFlip(FLIP)
@@ -148,7 +148,7 @@ class VOCTrainingEngine(ln.engine.Engine):
         self.train_loss['conf'].append(self.network.loss.loss_conf.data[0])
         if self.network.loss.loss_cls is not None:
             self.train_loss['cls'].append(self.network.loss.loss_cls.data[0])
-    
+
     def train_batch(self):
         self.optimizer.step()
         self.optimizer.zero_grad()

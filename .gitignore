@@ -16,3 +16,8 @@ eggs/
 
 pip-log.txt
 pip-delete-this-directory.txt
+
+examples/yolo-voc/*.tar
+examples/yolo-voc/data/
+examples/yolo-voc/backup/
+examples/yolo-voc/darknet19_448.conv.23
