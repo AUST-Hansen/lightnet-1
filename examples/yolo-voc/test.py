@@ -26,7 +26,7 @@ ln.logger.setLogFile('best_pr.log', filemode='a')           # Enable logging of 
 WORKERS = 8
 PIN_MEM = True
 ROOT = 'data'
-TESTFILE = f'{ROOT}/test.pkl'
+TESTFILE = f'{ROOT}/test.pkl'  # NOQA
 
 CLASSES = 20
 LABELS = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
@@ -71,12 +71,12 @@ def test(arguments):
     log.debug('Creating dataset')
     loader = torch.utils.data.DataLoader(
         CustomDataset(TESTFILE, net),
-        batch_size = MINI_BATCH,
-        shuffle = False,
-        drop_last = False,
-        num_workers = WORKERS if arguments.cuda else 0,
-        pin_memory = PIN_MEM if arguments.cuda else False,
-        collate_fn = ln.data.list_collate,
+        batch_size=MINI_BATCH,
+        shuffle=False,
+        drop_last=False,
+        num_workers=WORKERS if arguments.cuda else 0,
+        pin_memory=PIN_MEM if arguments.cuda else False,
+        collate_fn=ln.data.list_collate,
     )
 
     if arguments.visdom:
@@ -99,25 +99,25 @@ def test(arguments):
 
         output, loss = net(data, box)
 
-        tot_loss.append(net.loss.loss_tot.data[0]*len(box))
-        coord_loss.append(net.loss.loss_coord.data[0]*len(box))
-        conf_loss.append(net.loss.loss_conf.data[0]*len(box))
+        tot_loss.append(net.loss.loss_tot.data[0] * len(box))
+        coord_loss.append(net.loss.loss_coord.data[0] * len(box))
+        conf_loss.append(net.loss.loss_conf.data[0] * len(box))
         if net.loss.loss_cls is not None:
-            cls_loss.append(net.loss.loss_cls.data[0]*len(box))
+            cls_loss.append(net.loss.loss_cls.data[0] * len(box))
 
         key_val = len(anno)
-        anno.update({loader.dataset.keys[key_val+k]: v for k,v in enumerate(box)})
-        det.update({loader.dataset.keys[key_val+k]: v for k,v in enumerate(output)})
+        anno.update({loader.dataset.keys[key_val + k]: v for k, v in enumerate(box)})
+        det.update({loader.dataset.keys[key_val + k]: v for k, v in enumerate(output)})
 
     log.debug('Computing statistics')
 
     pr = bbb.pr(det, anno)
-    m_ap = round(bbb.ap(*pr)*100, 2)
-    tot = round(sum(tot_loss)/len(anno), 5)
-    coord = round(sum(coord_loss)/len(anno), 2)
-    conf = round(sum(conf_loss)/len(anno), 2)
+    m_ap = round(bbb.ap(*pr) * 100, 2)
+    tot = round(sum(tot_loss) / len(anno), 5)
+    coord = round(sum(coord_loss) / len(anno), 2)
+    conf = round(sum(conf_loss) / len(anno), 2)
     if len(cls_loss) > 0:
-        cls = round(sum(cls_loss)/len(anno), 2)
+        cls = round(sum(cls_loss) / len(anno), 2)
         log.test(f'{net.seen//BATCH} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf} Cls:{cls})')
     else:
         log.test(f'{net.seen//BATCH} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf})')

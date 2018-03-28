@@ -14,7 +14,8 @@ __all__ = ['logger']
 
 # Formatter
 class ColorCode(Enum):
-    """ Color Codes """
+    """Color codes."""
+
     RESET = '\033[00m'
     BOLD = '\033[01m'
 
@@ -47,13 +48,13 @@ class ColoredFormatter(logging.Formatter):
         name = record.name
         if self.color:
             color = self.color_codes[levelname] if levelname in self.color_codes else ''
-            record.levelname = f'{ColorCode.BOLD.value}{color.value}{levelname:10}{ColorCode.RESET.value}'
+            record.levelname = f'{ColorCode.BOLD.value}{color.value}{levelname:10}{ColorCode.RESET.value}'  # NOQA
         else:
             record.levelname = f'{levelname:10}'
         return logging.Formatter.format(self, record)
 
     def setColor(self, value):
-        """ Enable or disable colored output for this handler """
+        """Enable or disable colored output for this handler."""
         self.color = value
 
 
@@ -90,13 +91,23 @@ def train(self, message, *args, **kwargs):
         self._log(39, message, args, **kwargs)
 
 
+# File Handler
+def createFileHandler(self, filename, levels=('TRAIN', 'TEST'), filemode='a'):
+    """Create a file to write log messages of certaing levels."""
+    fh = logging.FileHandler(filename=filename, mode=filemode)
+    fh.setLevel(logging.NOTSET)
+    fh.addFilter(LevelFilter(levels))
+    fh.setFormatter(logging.Formatter('{levelname}  {message}', style='{'))
+    logger.addHandler(fh)
+    return fh
+
+
 logging.addLevelName(35, 'DEPRECATED')
 logging.Logger.deprecated = deprecated
 logging.addLevelName(38, 'TEST')
 logging.Logger.test = test
 logging.addLevelName(39, 'TRAIN')
 logging.Logger.train = train
-
 
 # Console Handler
 ch = logging.StreamHandler()
@@ -107,17 +118,6 @@ if 'LN_LOGLVL' in os.environ:
         ch.setFormatter(ColoredFormatter('{levelname} [{name}] {message}', style='{'))
 else:
     ch.setLevel(logging.INFO)
-
-# File Handler
-def createFileHandler(self, filename, levels=('TRAIN', 'TEST'), filemode='a'):
-    """ Create a file to write log messages of certaing levels """
-    fh = logging.FileHandler(filename=filename, mode=filemode)
-    fh.setLevel(logging.NOTSET)
-    fh.addFilter(LevelFilter(levels))
-    fh.setFormatter(logging.Formatter('{levelname}  {message}', style='{'))
-    logger.addHandler(fh)
-    return fh
-
 
 # Logger
 logger = logging.getLogger('lightnet')

@@ -1,7 +1,7 @@
 #
 #   Lightnet dataset that works with brambox annotations
 #   Copyright EAVISE
-#   
+#
 
 import os
 import copy
@@ -22,8 +22,8 @@ log = logging.getLogger(__name__)
 
 
 class BramboxData(Dataset):
-    """ Dataset for any brambox parsable annotation format.
-        
+    """Dataset for any brambox parsable annotation format.
+
     Args:
         anno_format (brambox.boxes.format): Annotation format
         anno_filename (list or str): Annotation filename, list of filenames or expandable sequence
@@ -34,6 +34,7 @@ class BramboxData(Dataset):
         anno_transform (torchvision.transforms.Compose): Transforms to perform on the annotations
         kwargs (dict): Keyword arguments that are passed to the brambox parser
     """
+
     def __init__(self, anno_format, anno_filename, input_dimension, class_label_map=None, identify=None, img_transform=None, anno_transform=None, **kwargs):
         super(BramboxData, self).__init__()
         self.__input_dim = input_dimension[:2]
@@ -45,13 +46,13 @@ class BramboxData(Dataset):
             self.id = lambda name : os.path.splitext(name)[0] + '.png'
 
         # Get annotations
-        self.annos = bbb.parse(anno_format, anno_filename, identify=lambda f:f, class_label_map=class_label_map, **kwargs)
+        self.annos = bbb.parse(anno_format, anno_filename, identify=lambda f: f, class_label_map=class_label_map, **kwargs)
         self.keys = list(self.annos)
 
         # Add class_ids
         if class_label_map is None:
-            log.warn(f'No class_label_map given, annotations wont have a class_id values for eg. loss function')
-        for k,annos in self.annos.items():
+            log.warn(f'No class_label_map given, annotations wont have a class_id values for eg. loss function')  # NOQA
+        for k, annos in self.annos.items():
             for a in annos:
                 if class_label_map is not None:
                     try:
@@ -68,7 +69,7 @@ class BramboxData(Dataset):
         return len(self.keys)
 
     def __getitem__(self, index):
-        """ Get (img, anno) tuple based of index from self.keys """
+        """Get (img, anno) tuple based of index from self.keys."""
         if not isinstance(index, int):
             self._input_dim = index[0]
             index = index[1]
@@ -92,7 +93,8 @@ class BramboxData(Dataset):
 
     @property
     def input_dim(self):
-        """ Dimensions that can be used by transforms to set the correct image size, etc.
+        """The dimensions that can be used by transforms to set the correct image size, etc.
+
         This allows transforms to have a single source of truth for the input dimension of the network.
 
         Return:
@@ -104,12 +106,14 @@ class BramboxData(Dataset):
 
 
 class DataLoader(torchDataLoader):
-    """ Lightnet dataloader that enables on the fly resizing of the images.
+    """Lightnet dataloader that enables on the fly resizing of the images.
+
     See :class:`torch.utils.data.DataLoader` for more information on the arguments.
 
     Note:
         This dataloader only works with :class:`lightnet.data.BramboxData` based datasets.
     """
+
     def __init__(self, *args, **kwargs):
         super(DataLoader, self).__init__(*args, **kwargs)
         shuffle = False
@@ -151,7 +155,7 @@ class DataLoader(torchDataLoader):
         self.batch_sampler = batch_sampler
 
     def change_input_dim(self, value=32, randomize=True):
-        """ This function will compute a new size and update it on the next mini_batch.
+        """The function will compute a new size and update it on the next mini_batch.
 
         Args:
             value (int or tuple, optional): if ``random`` is false this value will be chosen for the new size, else this number represents a multiple for the random size; Default **32**
@@ -165,18 +169,20 @@ class DataLoader(torchDataLoader):
             self.batch_sampler.new_input_dim = value
         else:
             if isinstance(value, int):
-                size = (random.randint(0,9) + 10) * value 
+                size = (random.randint(0, 9) + 10) * value
                 size = (size, size)
             else:
-                size = ((random.randint(0,9) + 10) * value[0], (random.randint(0,9) + 10) * value[1])
+                size = ((random.randint(0, 9) + 10) * value[0], (random.randint(0, 9) + 10) * value[1])
             self.batch_sampler.new_input_dim = size
 
 
 class BatchSampler(torchBatchSampler):
-    """ This batch sampler will generate mini-batches of (dim, index) tuples from another sampler.
+    """This batch sampler will generate mini-batches of (dim, index) tuples from another sampler.
+
     It works just like the :class:`torch.utils.data.sampler.BatchSampler`, but it will prepend a dimension,
     whilst ensuring it stays the same across one mini-batch.
     """
+
     def __init__(self, *args, input_dimension=None, **kwargs):
         super(BatchSampler, self).__init__(*args, **kwargs)
         self.input_dim = input_dimension
@@ -189,7 +195,7 @@ class BatchSampler(torchBatchSampler):
             self.__set_input_dim()
 
     def __set_input_dim(self):
-        """ This function randomly changes the the input dimension of the dataset. """
+        """The function randomly changes the the input dimension of the dataset."""
         if self.new_input_dim is not None:
             log.info(f'Resizing network {self.new_input_dim[:2]}')
             self.input_dim = (self.new_input_dim[0], self.new_input_dim[1])
@@ -197,7 +203,8 @@ class BatchSampler(torchBatchSampler):
 
 
 def list_collate(batch):
-    """ Function that collates lists of items together into one list (of lists).
+    """Function that collates lists of items together into one list (of lists).
+
     Use this as the collate function in a Dataloader, if you want to have a list of items as an output, as opposed to tensors (eg. Brambox.boxes).
     """
     items = list(zip(*batch))

@@ -35,7 +35,7 @@ NETWORK_SIZE = [416, 416]
 CONF_THRESH = 0.1
 NMS_THRESH = 0.4
 
-BATCH = 64 
+BATCH = 64
 MINI_BATCH = 8
 MAX_BATCHES = 45000
 
@@ -59,7 +59,8 @@ RS_RATES = []
 
 
 class TrainingEngine(ln.engine.Engine):
-    """ This is a custom engine for this training cycle """
+    """This is a custom engine for this training cycle."""
+
     batch_size = BATCH
     mini_batch_size = MINI_BATCH
     max_batches = MAX_BATCHES
@@ -78,37 +79,37 @@ class TrainingEngine(ln.engine.Engine):
         ])
         if self.cuda:
             net.cuda()
-        optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE/BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY*BATCH)
+        optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE / BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY * BATCH)
 
         log.debug('Creating datasets')
         data = ln.data.DataLoader(
             ln.models.DarknetData(TRAINFILE, input_dimension=NETWORK_SIZE, class_label_map=LABELS),
-            batch_size = MINI_BATCH,
-            shuffle = True,
-            drop_last = True,
-            num_workers = WORKERS if self.cuda else 0,
-            pin_memory = PIN_MEM if self.cuda else False,
-            collate_fn = ln.data.list_collate,
+            batch_size=MINI_BATCH,
+            shuffle=True,
+            drop_last=True,
+            num_workers=WORKERS if self.cuda else 0,
+            pin_memory=PIN_MEM if self.cuda else False,
+            collate_fn=ln.data.list_collate,
         )
         if self.enable_testing is not None:
             self.testloader = torch.utils.data.DataLoader(
                 ln.models.DarknetData(VALIDFILE, False, input_dimension=NETWORK_SIZE, class_label_map=LABELS),
-                batch_size = MINI_BATCH,
-                shuffle = False,
-                drop_last = False,
-                num_workers = WORKERS if self.cuda else 0,
-                pin_memory = PIN_MEM if self.cuda else False,
-                collate_fn = ln.data.list_collate,
+                batch_size=MINI_BATCH,
+                shuffle=False,
+                drop_last=False,
+                num_workers=WORKERS if self.cuda else 0,
+                pin_memory=PIN_MEM if self.cuda else False,
+                collate_fn=ln.data.list_collate,
             )
 
         super(TrainingEngine, self).__init__(net, optim, data)
 
     def start(self):
-        """ Starting values """
+        """Starting values."""
         if CLASSES > 1:
-            legend=['Total loss', 'Coordinate loss', 'Confidence loss', 'Class loss']
+            legend = ['Total loss', 'Coordinate loss', 'Confidence loss', 'Class loss']
         else:
-            legend=['Total loss', 'Coordinate loss', 'Confidence loss']
+            legend = ['Total loss', 'Coordinate loss', 'Confidence loss']
         self.plot_train_loss = ln.engine.LinePlotter(
             self.visdom,
             'train_loss',
@@ -122,7 +123,7 @@ class TrainingEngine(ln.engine.Engine):
         )
         self.train_loss = {'tot': [], 'coord': [], 'conf': [], 'cls': []}
 
-        self.add_rate('learning_rate', LR_STEPS, [lr/BATCH for lr in LR_RATES])
+        self.add_rate('learning_rate', LR_STEPS, [lr / BATCH for lr in LR_RATES])
         self.add_rate('backup_rate', BP_STEPS, BP_RATES, BACKUP)
         self.add_rate('resize_rate', RS_STEPS, RS_RATES, RESIZE)
 
@@ -169,7 +170,7 @@ class TrainingEngine(ln.engine.Engine):
         self.train_loss['conf'].append(self.network.loss.loss_conf.data[0])
         if CLASSES > 1:
             self.train_loss['cls'].append(self.network.loss.loss_cls.data[0])
-    
+
     def train_batch(self):
         self.optimizer.step()
         self.optimizer.zero_grad()
@@ -183,7 +184,7 @@ class TrainingEngine(ln.engine.Engine):
 
         if CLASSES > 1:
             self.plot_train_loss(np.array([[tot, coord, conf, cls]]), np.array([self.batch]))
-            self.log(f'{self.batch} Loss:{round(tot, 5)} (Coord:{round(coord, 2)} Conf:{round(conf, 2)} Cls:{round(cls, 2)})')
+            self.log(f'{self.batch} Loss:{round(tot, 5)} (Coord:{round(coord, 2)} Conf:{round(conf, 2)} Cls:{round(cls, 2)})')  # NOQA
         else:
             self.plot_train_loss(np.array([[tot, coord, conf]]), np.array([self.batch]))
             self.log(f'{self.batch} Loss:{round(tot, 5)} (Coord:{round(coord, 2)} Conf:{round(conf, 2)})')
@@ -206,22 +207,22 @@ class TrainingEngine(ln.engine.Engine):
 
             output, loss = self.network(data, target)
 
-            tot_loss.append(loss.data[0]*len(target))
+            tot_loss.append(loss.data[0] * len(target))
             key_val = len(anno)
-            anno.update({key_val+k: v for k,v in enumerate(target)})
-            det.update({key_val+k: v for k,v in enumerate(output)})
+            anno.update({key_val + k: v for k, v in enumerate(target)})
+            det.update({key_val + k: v for k, v in enumerate(output)})
 
             if self.sigint:
                 return
 
         pr = bbb.pr(det, anno)
         m_ap = bbb.ap(*pr)
-        loss = round(sum(tot_loss)/len(anno), 5)
+        loss = round(sum(tot_loss) / len(anno), 5)
         self.log(f'Loss:{loss} mAP:{round(m_ap*100, 2)}%')
         self.plot_test_loss(np.array([loss]), np.array([self.batch]))
         self.plot_test_pr.clear()
         self.plot_test_pr(np.array(pr[0]), np.array(pr[1]), update='replace', name=f'{self.batch} - {round(m_ap*100,2)}%')
-        
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train a lightnet network')

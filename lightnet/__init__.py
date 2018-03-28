@@ -3,13 +3,12 @@
 #   Copyright EAVISE
 #
 
-__all__ = ['network', 'data', 'engine', 'models']
-
-
-from .version import __version__
-from .log import *
+from .version import __version__  # NOQA
+from .log import *  # NOQA
 
 from . import network
 from . import data
 from . import engine
 from . import models
+
+__all__ = ['network', 'data', 'engine', 'models']

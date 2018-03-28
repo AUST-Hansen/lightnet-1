@@ -22,7 +22,7 @@ import sys
 import sphinx_rtd_theme
 
 sys.path.insert(0, os.path.abspath('../'))
-import lightnet
+import lightnet  # NOQA
 
 # -- General configuration ------------------------------------------------
 
@@ -40,7 +40,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
-    ]
+]
 
 todo_include_todos = True
 napoleon_use_ivar = True
@@ -50,7 +50,7 @@ intersphinx_mapping = {
     'pytorch': ('http://pytorch.org/docs/master/', None),
     'python': ('https://docs.python.org/3.6', None),
     'brambox': ('https://eavise.gitlab.io/brambox', None),
-    }
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
@@ -200,6 +200,3 @@ texinfo_documents = [
      author, 'Lightnet', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-

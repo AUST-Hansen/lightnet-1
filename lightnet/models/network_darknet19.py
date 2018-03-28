@@ -3,19 +3,15 @@
 #   Copyright EAVISE
 #
 
-import os
 from collections import OrderedDict
-import torch
 import torch.nn as nn
-
 import lightnet.network as lnn
-import lightnet.data as lnd
 
 __all__ = ['Darknet19']
 
 
 class Darknet19(lnn.Darknet):
-    """ `Darknet19`_ implementation with pytorch.
+    """`Darknet19`_ implementation with pytorch.
 
     Todo:
         - Loss function: L2 (Crossentropyloss in pytorch)
@@ -31,8 +27,9 @@ class Darknet19(lnn.Darknet):
 
     .. _Darknet19: https://github.com/pjreddie/darknet/blob/master/cfg/darknet19.cfg
     """
+
     def __init__(self, num_classes=20, weights_file=None, input_channels=3):
-        """ Network initialisation """
+        """Network initialization."""
         super(Darknet19, self).__init__()
 
         # Parameters

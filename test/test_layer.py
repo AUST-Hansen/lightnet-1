@@ -1,7 +1,6 @@
-import time
 import unittest
 import torch
-from lightnet.network.layer import *
+from lightnet.network.layer import *  # NOQA
 
 # this array was generated based on a manually validated implementation
 reorg_forward_expected_output = torch.FloatTensor([
@@ -70,6 +69,7 @@ reorg_forward_expected_output = torch.FloatTensor([
     465.0, 467.0, 469.0, 471.0, 473.0, 475.0, 477.0, 479.0,
     497.0, 499.0, 501.0, 503.0, 505.0, 507.0, 509.0, 511.0])
 
+
 class TestReorg(unittest.TestCase):
     def setUp(self):
         self.reorg = Reorg(2)
@@ -87,8 +87,8 @@ class TestReorg(unittest.TestCase):
         pass
 
     def test_dimensions_forward_cpu(self):
-        """Validate that the dimensions of the output tensor are
-        correct given a tensor with known input dimensions.
+        """Validate that the dimensions of the output tensor are correct given a tensor with known input dimensions.
+
         Test CPU implementation
         """
         #t1 = time.time()
@@ -97,8 +97,8 @@ class TestReorg(unittest.TestCase):
         self.assertEqual(output.size(), torch.Size([1, 32, 4, 4]))
 
     def test_dimensions_forward_cuda(self):
-        """Validate that the dimensions of the output tensor are
-        correct given a tensor with known input dimensions.
+        """Validate that the dimensions of the output tensor are correct given a tensor with known input dimensions.
+
         Test CUDA implementation
         """
         self.input = self.input.cuda()
@@ -109,8 +109,8 @@ class TestReorg(unittest.TestCase):
         self.assertEqual(output.size(), torch.Size([1, 32, 4, 4]))
 
     def test_forward_cpu(self):
-        """Validate that the reorg layer puts the input elements to
-        the correct locations in the output tensor.
+        """Validate that the reorg layer puts the input elements to the correct locations in the output tensor.
+
         Test CPU implementation
         """
         output = self.reorg.forward(self.input)
@@ -118,8 +118,8 @@ class TestReorg(unittest.TestCase):
         self.assertTrue(equal_elements.all())
 
     def test_forward_cuda(self):
-        """Validate that the reorg layer puts the input elements to
-        the correct locations in the output tensor.
+        """Validate that the reorg layer puts the input elements to the correct locations in the output tensor.
+
         Test CUDA implementation
         """
         self.input = self.input.cuda()

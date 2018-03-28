@@ -1,5 +1,6 @@
-"""
-Lightnet Models Module |br|
+"""Lightnet Models Module.
+
+|br|
 This module contains darknet networks that were recreated with this library.
 Take a look at the code to learn how to use this library, or just use these models if that is all that you need.
 """
@@ -7,8 +8,8 @@ Take a look at the code to learn how to use this library, or just use these mode
 # No __all__ : everything can be passed on here
 
 
-from .dataset_darknet import *
-from .network_darknet19 import *
-from .network_mobilenet_yolo import *
-from .network_tiny_yolo import *
-from .network_yolo import *
+from .dataset_darknet import *  # NOQA
+from .network_darknet19 import *  # NOQA
+from .network_mobilenet_yolo import *  # NOQA
+from .network_tiny_yolo import *  # NOQA
+from .network_yolo import *  # NOQA

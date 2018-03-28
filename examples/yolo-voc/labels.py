@@ -16,17 +16,18 @@ TRAINSET = [
     ('2012', 'val'),
     ('2007', 'train'),
     ('2007', 'val'),
-    ]
+]
+
 TESTSET = [
     ('2007', 'test'),
-    ]
+]
 
 
 def identify(xml_file):
     root = ET.parse(xml_file).getroot()
     folder = root.find('folder').text
     filename = root.find('filename').text
-    return f'{folder}/JPEGImages/{filename}'
+    return f'{folder}/JPEGImages/{filename}'  # NOQA
 
 
 if __name__ == '__main__':
@@ -43,8 +44,8 @@ if __name__ == '__main__':
     print('Parsing training annotation files')
     train_annos = bbb.parse('anno_pascalvoc', train, identify)
     # Remove difficult for training
-    for k,annos in train_annos.items():
-        for i in range(len(annos)-1, -1, -1):
+    for k, annos in train_annos.items():
+        for i in range(len(annos) - 1, -1, -1):
             if annos[i].difficult:
                 del annos[i]
 

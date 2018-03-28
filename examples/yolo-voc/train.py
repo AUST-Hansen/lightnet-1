@@ -25,7 +25,7 @@ log = logging.getLogger('lightnet.train')
 WORKERS = 20
 PIN_MEM = True
 ROOT = 'data'
-TRAINFILE = f'{ROOT}/train.pkl'
+TRAINFILE = f'{ROOT}/train.pkl'  # NOQA
 VISDOM_PORT = 8097
 
 CLASSES = 20
@@ -76,7 +76,8 @@ class VOCDataset(ln.data.BramboxData):
 
 
 class VOCTrainingEngine(ln.engine.Engine):
-    """ This is a custom engine for this training cycle """
+    """This is a custom engine for this training cycle."""
+
     batch_size = BATCH
     mini_batch_size = MINI_BATCH
     max_batches = MAX_BATCHES
@@ -96,17 +97,17 @@ class VOCTrainingEngine(ln.engine.Engine):
             net.cuda()
 
         log.debug('Creating optimizer')
-        optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE/BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY*BATCH)
+        optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE / BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY * BATCH)
 
         log.debug('Creating dataloader')
         data = ln.data.DataLoader(
             VOCDataset(TRAINFILE),
-            batch_size = self.mini_batch_size,
-            shuffle = True,
-            drop_last = True,
-            num_workers = WORKERS if self.cuda else 0,
-            pin_memory = PIN_MEM if self.cuda else False,
-            collate_fn = ln.data.list_collate,
+            batch_size=self.mini_batch_size,
+            shuffle=True,
+            drop_last=True,
+            num_workers=WORKERS if self.cuda else 0,
+            pin_memory=PIN_MEM if self.cuda else False,
+            collate_fn=ln.data.list_collate,
         )
 
         super(VOCTrainingEngine, self).__init__(net, optim, data, **kwargs)
@@ -114,9 +115,9 @@ class VOCTrainingEngine(ln.engine.Engine):
     def start(self):
         log.debug('Creating additional logging objects')
         if CLASSES > 1:
-            legend=['Total loss', 'Coordinate loss', 'Confidence loss', 'Class loss']
+            legend = ['Total loss', 'Coordinate loss', 'Confidence loss', 'Class loss']
         else:
-            legend=['Total loss', 'Coordinate loss', 'Confidence loss']
+            legend = ['Total loss', 'Coordinate loss', 'Confidence loss']
         self.plot_train_loss = ln.engine.LinePlotter(
             self.visdom,
             'train_loss',
@@ -129,7 +130,7 @@ class VOCTrainingEngine(ln.engine.Engine):
             )
         )
         self.train_loss = {'tot': [], 'coord': [], 'conf': [], 'cls': []}
-        self.add_rate('learning_rate', LR_STEPS, [lr/BATCH for lr in LR_RATES])
+        self.add_rate('learning_rate', LR_STEPS, [lr / BATCH for lr in LR_RATES])
         self.add_rate('backup_rate', BP_STEPS, BP_RATES, BACKUP)
         self.add_rate('resize_rate', RS_STEPS, RS_RATES, RESIZE)
         self.dataloader.change_input_dim()

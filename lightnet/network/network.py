@@ -14,8 +14,11 @@ from .weight import *
 __all__ = ['Darknet']
 log = logging.getLogger(__name__)
 
+
 class Darknet(nn.Module):
-    """ This class provides an abstraction layer on top of the ``pytorch Module``
+    """This class provides an abstraction layer to implement the darknet networks.
+
+    This class provides an abstraction layer on top of the ``pytorch Module``
     to make it easier to implement the darknet networks. There are 2 basic ways of using this class:
 
     - Override the ``forward()`` function.
@@ -37,6 +40,7 @@ class Darknet(nn.Module):
         If you use your own ``forward()`` function, you need to update the **self.seen** parameter
         whenever the network is training.
     """
+
     def __init__(self):
         super(Darknet, self).__init__()
 
@@ -44,7 +48,7 @@ class Darknet(nn.Module):
         self.layers = None
         self.loss = None
         self.postprocess = None
-        self.header = [0,2,0]
+        self.header = [0, 2, 0]
         self.seen = 0
 
     def _forward(self, x):
@@ -53,15 +57,18 @@ class Darknet(nn.Module):
             return self.layers(x)
         elif isinstance(self.layers, nn.ModuleList):
             log.warn('No _forward function defined, looping sequentially over modulelist')
-            for _,module in enumerate(self.layers):
+            for _, module in enumerate(self.layers):
                 x = module(x)
             return x
         else:
-            log.error(f'No _forward function defined and no default behaviour for this type of layers [{type(self.layers)}]')
+            log.error(f'No _forward function defined and no default behaviour for this type of layers [{type(self.layers)}]')  # NOQA
             raise NotImplementedError
 
     def forward(self, x, target=None):
-        """ This default forward function will compute the output of the network as ``self._forward(x)``.
+        """The default forward function will compute the output of the network.
+
+        The output is calculated as ``self._forward(x)``.
+
         Then, depending on whether you are training or evaluating, it will pass that output to ``self.loss()`` or ``self.posprocess()``. |br|
         This function also increments the **self.seen** variable.
 
@@ -98,12 +105,12 @@ class Darknet(nn.Module):
                 return x
 
     def modules_recurse(self, mod=None):
-        """ This function will recursively loop over all module children.
+        """The function will recursively loop over all module children.
 
         Args:
             mod (torch.nn.Module, optional): Module to loop over; Default **self**
         """
-        if mod == None:
+        if mod is None:
             mod = self
 
         for module in mod.children():
@@ -113,8 +120,9 @@ class Darknet(nn.Module):
                 yield module
 
     def load_weights(self, weights_file):
-        """ This function will load the weights from a file.
-        If the file extension is ``.pt``, it will be considered as a `pytorch pickle file <http://pytorch.org/docs/0.3.0/notes/serialization.html#recommended-approach-for-saving-a-model>`_. 
+        """The function will load the weights from a file.
+
+        If the file extension is ``.pt``, it will be considered as a `pytorch pickle file <http://pytorch.org/docs/0.3.0/notes/serialization.html#recommended-approach-for-saving-a-model>`_.
         Otherwise, the file is considered to be a darknet binary weight file.
 
         Args:
@@ -129,8 +137,9 @@ class Darknet(nn.Module):
                 self._load_darknet_weights(weights_file)
 
     def save_weights(self, weights_file):
-        """ This function will save the weights to a file.
-        If the file extension is ``.pt``, it will be considered as a `pytorch pickle file <http://pytorch.org/docs/0.3.0/notes/serialization.html#recommended-approach-for-saving-a-model>`_. 
+        """The function will save the weights to a file.
+
+        If the file extension is ``.pt``, it will be considered as a `pytorch pickle file <http://pytorch.org/docs/0.3.0/notes/serialization.html#recommended-approach-for-saving-a-model>`_.
         Otherwise, the file is considered to be a darknet binary weight file.
 
         Args:
@@ -145,7 +154,8 @@ class Darknet(nn.Module):
                 self._save_darknet_weights(weights_file)
 
     def update_weights(self, weights_file):
-        """ Pytorch weight files does not allow for partial loading of a network.
+        """Pytorch weight files does not allow for partial loading of a network.
+
         This update function gets around it by updating the current state_dict of the network
         with the state_dict of the pytorch ``weights_file`` given.
         """
@@ -162,7 +172,7 @@ class Darknet(nn.Module):
                 new_key = key.replace('.layer.', '.layers.')
                 new_state['weights'][new_key] = new_state['weights'].pop(key)
 
-        new_dict = {k: v for k,v in new_state['weights'].items() if k in old_state}
+        new_dict = {k: v for k, v in new_state['weights'].items() if k in old_state}
         old_state.update(new_dict)
         self.load_state_dict(old_state)
         self.seen = new_state['seen']
