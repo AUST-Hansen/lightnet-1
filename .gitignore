@@ -21,3 +21,5 @@ examples/yolo-voc/*.tar
 examples/yolo-voc/data/
 examples/yolo-voc/backup/
 examples/yolo-voc/darknet19_448.conv.23
+examples/yolo-voc/best_pr.log
+

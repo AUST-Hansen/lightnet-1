@@ -23,7 +23,7 @@ ln.logger.setLogFile('best_pr.log', filemode='a')           # Enable logging of 
 #ln.logger.setConsoleColor(False)                           # Disable colored terminal output
 
 # Parameters
-WORKERS = 8
+WORKERS = 20
 PIN_MEM = True
 ROOT = 'data'
 TESTFILE = f'{ROOT}/test.pkl'
@@ -41,7 +41,7 @@ MINI_BATCH = 8
 class CustomDataset(ln.data.BramboxData):
     def __init__(self, anno, network):
         def identify(img_id):
-            return f'{ROOT}/VOCdevkit/{img_id}.jpg'
+            return f'{ROOT}/VOCdevkit/{img_id}'
 
         lb  = ln.data.Letterbox(NETWORK_SIZE)
         it  = tf.ToTensor()
@@ -81,7 +81,7 @@ def test(arguments):
 
     if arguments.visdom:
         log.debug('Creating visdom visualisation wrappers')
-        vis = visdom.Visdom(port=8080)
+        vis = visdom.Visdom(port=8097)
         plot_pr = ln.engine.LinePlotter(vis, 'pr', opts=dict(xlabel='Recall', ylabel='Precision', title='Precision Recall', xtickmin=0, xtickmax=1, ytickmin=0, ytickmax=1, showlegend=True))
 
     log.debug('Running network')
