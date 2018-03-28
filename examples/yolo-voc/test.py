@@ -136,12 +136,12 @@ def test(arguments):
         now = time.time()
         name = f'mAP: {m_ap}%'
         re_seen = None
-        for index, (pr_, re_) in enumerate(sorted(zip(pr[0], pr[1]))):
+        for index, (re_, pr_) in enumerate(sorted(zip(pr[1], pr[0]))):
             re_ = round(re_, 2)
             if re_ != re_seen:
                 re_seen = re_
                 re_ = int(re_ * 100.0)
-                hyperdash_plot_pr(name, pr_, now + re_)
+                hyperdash_plot_pr(name, pr_, now + re_, True)
 
     if arguments.save_det is not None:
         # Note: These detection boxes are the coordinates for the letterboxed images,
