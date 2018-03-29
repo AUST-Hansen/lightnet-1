@@ -45,7 +45,7 @@ def process(name, verbose=True):
 
     print('Getting {description} annotation filenames'.format(description=description))
     dataset = []
-    for (year, img_set) in TRAINSET:
+    for (year, img_set) in DATASET:
         filename = '{ROOT}/VOCdevkit/VOC{year}/ImageSets/Main/{img_set}.txt'.format(ROOT=ROOT, year=year, img_set=img_set)
         with open(filename, 'r') as f:
             ids = f.read().strip().split()
