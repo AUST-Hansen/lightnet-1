@@ -252,7 +252,7 @@ class TrainingEngine(ln.engine.Engine):
         tot_loss = []
         anno, det = {}, {}
 
-        for idx, (data, target) in tqdm(enumerate(self.testloader)):
+        for idx, (data, target) in tqdm(list(enumerate(self.testloader))):
             if self.cuda:
                 data = data.cuda()
             data = torch.autograd.Variable(data, volatile=True)
