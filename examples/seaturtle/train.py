@@ -25,7 +25,7 @@ ln.logger.setLogFile('train.log', filemode='w')             # Enable logging of 
 #ln.logger.setConsoleColor(False)                           # Disable colored terminal log messages
 
 # Parameters
-WORKERS = 20
+WORKERS = 16
 PIN_MEM = True
 ROOT = 'data'
 TRAINFILE = '{ROOT}/train.pkl'.format(ROOT=ROOT)
@@ -40,7 +40,7 @@ CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
 BATCH = 64
-MINI_BATCH = 8
+MINI_BATCH = 64
 MAX_BATCHES = 45000
 
 JITTER = 0.2
