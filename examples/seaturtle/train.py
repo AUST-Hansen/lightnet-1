@@ -40,7 +40,7 @@ CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
 BATCH = 64
-MINI_BATCH = 64
+MINI_BATCH = 8
 MAX_BATCHES = 45000
 
 JITTER = 0.2
@@ -105,7 +105,7 @@ class TrainingEngine(ln.engine.Engine):
             ln.data.TensorToBrambox(NETWORK_SIZE, LABELS),
         ])
         if self.cuda:
-            net.cuda()
+            net = net.cuda()
 
         log.debug('Creating optimizer')
         optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE / BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY * BATCH)
@@ -121,11 +121,11 @@ class TrainingEngine(ln.engine.Engine):
             collate_fn=ln.data.list_collate,
         )
         if self.enable_testing is not None:
-            self.testloader = torch.utils.data.DataLoader(
+            self.testloader = ln.data.DataLoader(
                 VOCDataset(TESTFILE),
                 batch_size=MINI_BATCH,
-                shuffle=False,
-                drop_last=False,
+                shuffle=True,
+                drop_last=True,
                 num_workers=WORKERS if self.cuda else 0,
                 pin_memory=PIN_MEM if self.cuda else False,
                 collate_fn=ln.data.list_collate,
@@ -239,9 +239,10 @@ class TrainingEngine(ln.engine.Engine):
         tot_loss = []
         anno, det = {}, {}
 
-        for idx, (data, target) in tqdm(list(enumerate(self.testloader))):
+        for idx, (data, target) in tqdm(enumerate(self.testloader)):
             if self.cuda:
                 data = data.cuda()
+
             data = torch.autograd.Variable(data, volatile=True)
 
             output, loss = self.network(data, target)
