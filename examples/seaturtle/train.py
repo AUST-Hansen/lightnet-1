@@ -26,7 +26,7 @@ ln.logger.setLogFile('train.log', filemode='w')             # Enable logging of 
 
 # Parameters
 WORKERS = 16
-PIN_MEM = True
+PIN_MEM = False
 ROOT = 'data'
 TRAINFILE = '{ROOT}/train.pkl'.format(ROOT=ROOT)
 TESTFILE  = '{ROOT}/valid.pkl'.format(ROOT=ROOT)
