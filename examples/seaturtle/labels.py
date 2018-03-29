@@ -10,16 +10,15 @@ import brambox.boxes as bbb
 ROOT = 'data'       # Root folder where the VOCdevkit is located
 
 TRAINSET = [
-    ('2012', 'train'),
-    ('2012', 'val'),
-    ('2007', 'train'),
-    ('2007', 'val'),
+    ('2018', 'train'),
 ]
 
-VALIDSET = []
+VALIDSET = [
+    ('2018', 'val'),
+]
 
 TESTSET = [
-    ('2007', 'test'),
+    ('2018', 'test'),
 ]
 
 

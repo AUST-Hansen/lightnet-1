@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 #
 #   Copyright EAVISE
-#   Example: Test Yolo on Pascal VOC
+#   Example: Test the lightnet yolo network on a test data set and compute a PR/mAP metric
+#            This example script uses darknet type annotations
 #
 
 import argparse
@@ -18,7 +19,7 @@ import lightnet as ln
 import time
 
 log = logging.getLogger('lightnet.test')
-ln.logger.setLogFile('best_pr.log', filemode='a')           # Enable logging of test logs (By appending, multiple runs will keep writing to same file, allowing to search the best)
+ln.logger.setLogFile('test.log', filemode='w')              # Enable logging of TRAIN and TEST logs
 #ln.logger.setConsoleLevel(logging.NOTSET)                  # Enable debug prints in terminal
 #ln.logger.setConsoleColor(False)                           # Disable colored terminal output
 
@@ -30,7 +31,7 @@ TESTFILE = '{ROOT}/test.pkl'.format(ROOT=ROOT)
 
 VISDOM_PORT = 8097
 
-LABELS = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
+LABELS = ['fish', 'ignore', 'person', 'turtle_green', 'turtle_green+head', 'turtle_hawksbill', 'turtle_hawksbill+head']
 CLASSES = len(LABELS)
 
 NETWORK_SIZE = (416, 416)
@@ -84,12 +85,12 @@ def test(arguments):
 
     if arguments.visdom:
         log.debug('Creating visdom visualisation wrappers')
-        vis = visdom.Visdom(port=VISDOM_PORT)
-        visdom_plot_pr = ln.engine.VisdomLinePlotter(vis, 'pr', opts=dict(xlabel='Recall', ylabel='Precision', title='Precision Recall', xtickmin=0, xtickmax=1, ytickmin=0, ytickmax=1, showlegend=True))
+        vis = visdom.Visdom(port=8080)
+        plot_pr = ln.engine.LinePlotter(vis, 'pr', opts=dict(xlabel='Recall', ylabel='Precision', title='Precision Recall', xtickmin=0, xtickmax=1, ytickmin=0, ytickmax=1, showlegend=True))
 
     if arguments.hyperdash:
         log.debug('Creating hyperdash visualisation wrappers')
-        hd = hyperdash.Experiment('YOLOv2 Pascal VOC Test')
+        hd = hyperdash.Experiment('YOLOv2 Test')
         hyperdash_plot_pr = ln.engine.HyperdashLinePlotter(hd)
 
     log.debug('Running network')
@@ -131,7 +132,7 @@ def test(arguments):
 
     name = 'mAP: {m_ap}%'.format(m_ap=m_ap)
     if arguments.visdom:
-        visdom_plot_pr(np.array(pr[0]), np.array(pr[1]), name=name)
+        plot_pr(np.array(pr[0]), np.array(pr[1]), name=name)
 
     if arguments.hyperdash:
         now = time.time()

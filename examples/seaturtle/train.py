@@ -1,35 +1,37 @@
 #!/usr/bin/env python
 #
 #   Copyright EAVISE
-#   Example: Train Yolo on Pascal VOC
+#   Example: Train the lightnet yolo network using the lightnet engine
+#            This example script uses darknet type annotations
 #
 
 import os
 import argparse
 import logging
-import time
 from statistics import mean
-import numpy as np
 import visdom
 import hyperdash
+import numpy as np
 import torch
 from torchvision import transforms as tf
-# import brambox.boxes as bbb
+import brambox.boxes as bbb
 import lightnet as ln
+import time
 
 log = logging.getLogger('lightnet.train')
-#ln.logger.setLogFile('train.log', filemode='w')            # Enable logging of TRAIN and TEST logs
-#ln.logger.setConsoleLevel(logging.DEBUG)                   # Enable debug prints in terminal
-#ln.logger.setConsoleColor(False)                           # Disable colored terminal output
+ln.logger.setLogFile('train.log', filemode='w')             # Enable logging of TRAIN and TEST logs
+#ln.logger.setConsoleLevel(logging.DEBUG)                   # Enable debug log messages in terminal
+#ln.logger.setConsoleColor(False)                           # Disable colored terminal log messages
 
 # Parameters
 WORKERS = 20
 PIN_MEM = True
 ROOT = 'data'
 TRAINFILE = '{ROOT}/train.pkl'.format(ROOT=ROOT)
+TESTFILE  = '{ROOT}/valid.pkl'.format(ROOT=ROOT)
 VISDOM_PORT = 8097
 
-LABELS = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
+LABELS = ['fish', 'ignore', 'person', 'turtle_green', 'turtle_green+head', 'turtle_hawksbill', 'turtle_hawksbill+head']
 CLASSES = len(LABELS)
 
 NETWORK_SIZE = (416, 416)
@@ -37,7 +39,7 @@ CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
 BATCH = 96
-MINI_BATCH = 16
+MINI_BATCH = 8
 MAX_BATCHES = 45000
 
 JITTER = 0.2
@@ -49,12 +51,16 @@ VAL = 1.5
 LEARNING_RATE = 0.0001
 MOMENTUM = 0.9
 DECAY = 0.0005
-LR_STEPS = [250, 25000, 35000]
+LR_STEPS = [100, 25000, 35000]
 LR_RATES = [0.001, 0.0001, 0.00001]
 
 BACKUP = 500
 BP_STEPS = [5000, 50000]
 BP_RATES = [1000, 5000]
+
+TEST = 10
+TS_STEPS = []
+TS_RATES = []
 
 RESIZE = 10
 RS_STEPS = []
@@ -77,7 +83,7 @@ class VOCDataset(ln.data.BramboxData):
         super(VOCDataset, self).__init__('anno_pickle', anno, NETWORK_SIZE, LABELS, identify, img_tf, anno_tf)
 
 
-class VOCTrainingEngine(ln.engine.Engine):
+class TrainingEngine(ln.engine.Engine):
     """This is a custom engine for this training cycle."""
 
     batch_size = BATCH
@@ -87,8 +93,9 @@ class VOCTrainingEngine(ln.engine.Engine):
     def __init__(self, arguments, **kwargs):
         self.cuda = arguments.cuda
         self.backup_folder = arguments.backup
-        self.visdom = args.visdom
-        self.hyperdash = args.hyperdash
+        self.enable_testing = arguments.test
+        self.visdom = arguments.visdom
+        self.hyperdash = arguments.hyperdash
 
         log.debug('Creating network')
         net = ln.models.Yolo(CLASSES, arguments.weight, CONF_THRESH, NMS_THRESH)
@@ -102,21 +109,31 @@ class VOCTrainingEngine(ln.engine.Engine):
         log.debug('Creating optimizer')
         optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE / BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY * BATCH)
 
-        log.debug('Creating dataloader')
+        log.debug('Creating datasets')
         data = ln.data.DataLoader(
             VOCDataset(TRAINFILE),
-            batch_size=self.mini_batch_size,
+            batch_size=MINI_BATCH,
             shuffle=True,
             drop_last=True,
             num_workers=WORKERS if self.cuda else 0,
             pin_memory=PIN_MEM if self.cuda else False,
             collate_fn=ln.data.list_collate,
         )
+        if self.enable_testing is not None:
+            self.testloader = torch.utils.data.DataLoader(
+                VOCDataset(TESTFILE),
+                batch_size=MINI_BATCH,
+                shuffle=False,
+                drop_last=False,
+                num_workers=WORKERS if self.cuda else 0,
+                pin_memory=PIN_MEM if self.cuda else False,
+                collate_fn=ln.data.list_collate,
+            )
 
-        super(VOCTrainingEngine, self).__init__(net, optim, data, **kwargs)
+        super(TrainingEngine, self).__init__(net, optim, data)
 
     def start(self):
-        log.debug('Creating additional logging objects')
+        """Starting values."""
         if CLASSES > 1:
             legend = ['Total loss', 'Coordinate loss', 'Confidence loss', 'Class loss']
         else:
@@ -145,6 +162,34 @@ class VOCTrainingEngine(ln.engine.Engine):
         self.add_rate('learning_rate', LR_STEPS, [lr / BATCH for lr in LR_RATES])
         self.add_rate('backup_rate', BP_STEPS, BP_RATES, BACKUP)
         self.add_rate('resize_rate', RS_STEPS, RS_RATES, RESIZE)
+
+        if self.enable_testing is not None:
+            self.visdom_plot_test_loss = ln.engine.VisdomLinePlotter(
+                self.visdom,
+                'test_loss',
+                name='Total loss',
+                opts=dict(
+                    title='Testing Loss',
+                    xlabel='Batch',
+                    ylabel='Loss',
+                    showlegend=True
+                )
+            )
+            self.visdom_plot_test_pr = ln.engine.VisdomLinePlotter(
+                self.visdom,
+                'test_pr',
+                name='latest',
+                opts=dict(
+                    xlabel='Recall',
+                    ylabel='Precision',
+                    title='Testing PR',
+                    xtickmin=0, xtickmax=1,
+                    ytickmin=0, ytickmax=1,
+                    showlegend=True
+                )
+            )
+            self.add_rate('test_rate', TS_STEPS, TS_RATES, TEST)
+
         self.dataloader.change_input_dim()
 
     def process_batch(self, data):
@@ -202,6 +247,36 @@ class VOCTrainingEngine(ln.engine.Engine):
         if self.batch % self.resize_rate == 0:
             self.dataloader.change_input_dim()
 
+    def test(self):
+        tot_loss = []
+        anno, det = {}, {}
+
+        for idx, (data, target) in enumerate(self.testloader):
+            if self.cuda:
+                data = data.cuda()
+            data = torch.autograd.Variable(data, volatile=True)
+
+            output, loss = self.network(data, target)
+
+            tot_loss.append(loss.data[0] * len(target))
+            key_val = len(anno)
+            anno.update({key_val + k: v for k, v in enumerate(target)})
+            det.update({key_val + k: v for k, v in enumerate(output)})
+
+            if self.sigint:
+                return
+
+        pr = bbb.pr(det, anno)
+        m_ap = bbb.ap(*pr)
+        loss = round(sum(tot_loss) / len(anno), 5)
+        self.log('Loss:{loss} mAP:{m_ap:0.02f}%'.format(loss, m_ap=m_ap * 100.0))
+        self.visdom_plot_test_loss(np.array([loss]), np.array([self.batch]))
+        self.visdom_plot_test_pr.clear()
+        self.visdom_plot_test_pr(np.array(pr[0]), np.array(pr[1]), update='replace', name='{self.batch} - {m_ap:0.02f}%'.format(self=self, m_ap=m_ap * 100.0))
+
+        self.hyperdash_plot_train_loss('Loss Total (Test)', loss, log=False)
+        self.hyperdash_plot_train_loss('mAP (Test)', m_ap, log=False)
+
     def quit(self):
         if self.sigint:
             self.network.save_weights(os.path.join(self.backup_folder, 'backup.pt'))
@@ -214,10 +289,11 @@ class VOCTrainingEngine(ln.engine.Engine):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train Lightnet-Yolo for the Pascal VOC dataset')
-    parser.add_argument('weight', help='Path to initial weight file', default=None)
+    parser = argparse.ArgumentParser(description='Train a lightnet network')
+    parser.add_argument('weight', help='Path to weight file', default=None)
     parser.add_argument('-b', '--backup', help='Backup folder', default='./backup')
-    parser.add_argument('-c', '--cuda', action='store_true', help='Use cuda to speed up training')
+    parser.add_argument('-t', '--test', action='store_true', help='Enable testing')
+    parser.add_argument('-c', '--cuda', action='store_true', help='Use cuda')
     parser.add_argument('-v', '--visdom', action='store_true', help='Visualize training data with visdom')
     parser.add_argument('--hyperdash', '--hd', action='store_true', help='Visualize training data with hyperdash')
     args = parser.parse_args()
@@ -225,7 +301,7 @@ if __name__ == '__main__':
     # Parse arguments
     if args.cuda:
         if not torch.cuda.is_available():
-            log.debug('CUDA not available')
+            log.error('CUDA not available')
             args.cuda = False
         else:
             log.debug('CUDA enabled')
@@ -236,7 +312,7 @@ if __name__ == '__main__':
         args.visdom = None
 
     if args.hyperdash:
-        args.hyperdash = hyperdash.Experiment('YOLOv2 Pascal VOC Train')
+        args.hyperdash = hyperdash.Experiment('YOLOv2 Train')
     else:
         args.hyperdash = None
 
@@ -248,7 +324,7 @@ if __name__ == '__main__':
             raise ValueError('Backup path is not a folder')
 
     # Train
-    eng = VOCTrainingEngine(args)
+    eng = TrainingEngine(args)
     b1 = eng.batch
     t1 = time.time()
     eng()
