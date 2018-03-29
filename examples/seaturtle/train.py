@@ -39,8 +39,8 @@ NETWORK_SIZE = (416, 416)
 CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
-BATCH = 96
-MINI_BATCH = 8
+BATCH = 64
+MINI_BATCH = 64
 MAX_BATCHES = 45000
 
 JITTER = 0.2
@@ -176,19 +176,6 @@ class TrainingEngine(ln.engine.Engine):
                     showlegend=True
                 )
             )
-            self.visdom_plot_test_pr = ln.engine.VisdomLinePlotter(
-                self.visdom,
-                'test_pr',
-                name='latest',
-                opts=dict(
-                    xlabel='Recall',
-                    ylabel='Precision',
-                    title='Testing PR',
-                    xtickmin=0, xtickmax=1,
-                    ytickmin=0, ytickmax=1,
-                    showlegend=True
-                )
-            )
             self.add_rate('test_rate', TS_STEPS, TS_RATES, TEST)
 
         self.dataloader.change_input_dim()
@@ -272,9 +259,6 @@ class TrainingEngine(ln.engine.Engine):
         loss = round(sum(tot_loss) / len(anno), 5)
         self.log('Loss:{loss} mAP:{m_ap:0.02f}%'.format(loss=loss, m_ap=m_ap * 100.0))
         self.visdom_plot_test_loss(np.array([loss]), np.array([self.batch]))
-        self.visdom_plot_test_pr.clear()
-        self.visdom_plot_test_pr(np.array(pr[0]), np.array(pr[1]), update='replace', name='{self.batch} - {m_ap:0.02f}%'.format(self=self, m_ap=m_ap * 100.0))
-
         self.hyperdash_plot_train_loss('Loss Total (Test)', loss, log=False)
         self.hyperdash_plot_train_loss('mAP (Test)', m_ap, log=False)
 
