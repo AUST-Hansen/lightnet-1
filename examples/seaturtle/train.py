@@ -17,6 +17,7 @@ from torchvision import transforms as tf
 import brambox.boxes as bbb
 import lightnet as ln
 import time
+from tqdm import tqdm
 
 log = logging.getLogger('lightnet.train')
 ln.logger.setLogFile('train.log', filemode='w')             # Enable logging of TRAIN and TEST logs
@@ -251,7 +252,7 @@ class TrainingEngine(ln.engine.Engine):
         tot_loss = []
         anno, det = {}, {}
 
-        for idx, (data, target) in enumerate(self.testloader):
+        for idx, (data, target) in tqdm(enumerate(self.testloader)):
             if self.cuda:
                 data = data.cuda()
             data = torch.autograd.Variable(data, volatile=True)
@@ -269,7 +270,7 @@ class TrainingEngine(ln.engine.Engine):
         pr = bbb.pr(det, anno)
         m_ap = bbb.ap(*pr)
         loss = round(sum(tot_loss) / len(anno), 5)
-        self.log('Loss:{loss} mAP:{m_ap:0.02f}%'.format(loss, m_ap=m_ap * 100.0))
+        self.log('Loss:{loss} mAP:{m_ap:0.02f}%'.format(loss=loss, m_ap=m_ap * 100.0))
         self.visdom_plot_test_loss(np.array([loss]), np.array([self.batch]))
         self.visdom_plot_test_pr.clear()
         self.visdom_plot_test_pr(np.array(pr[0]), np.array(pr[1]), update='replace', name='{self.batch} - {m_ap:0.02f}%'.format(self=self, m_ap=m_ap * 100.0))
