@@ -25,7 +25,7 @@ ln.logger.setLogFile('train.log', filemode='w')             # Enable logging of 
 #ln.logger.setConsoleColor(False)                           # Disable colored terminal log messages
 
 # Parameters
-WORKERS = 1
+WORKERS = 4
 PIN_MEM = True
 ROOT = 'data'
 TRAINFILE = '{ROOT}/train.pkl'.format(ROOT=ROOT)
@@ -105,7 +105,7 @@ class TrainingEngine(ln.engine.Engine):
             ln.data.TensorToBrambox(NETWORK_SIZE, LABELS),
         ])
         if self.cuda:
-            net.cuda(async=True)
+            net.cuda()
 
         log.debug('Creating optimizer')
         optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE / BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY * BATCH)
@@ -183,7 +183,7 @@ class TrainingEngine(ln.engine.Engine):
     def process_batch(self, data):
         data, target = data
         if self.cuda:
-            data = data.cuda(async=True)
+            data = data.cuda(async=PIN_MEM)
         data = torch.autograd.Variable(data, requires_grad=True)
 
         loss = self.network(data, target)
@@ -241,7 +241,7 @@ class TrainingEngine(ln.engine.Engine):
 
         for idx, (data, target) in tqdm(enumerate(self.testloader)):
             if self.cuda:
-                data = data.cuda(async=True)
+                data = data.cuda(async=PIN_MEM)
 
             data = torch.autograd.Variable(data, volatile=True)
 
