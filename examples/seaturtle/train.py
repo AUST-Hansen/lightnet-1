@@ -227,7 +227,8 @@ class TrainingEngine(ln.engine.Engine):
         self.hyperdash_plot_train_loss('Loss Total', tot, log=False)
         self.hyperdash_plot_train_loss('Loss Coordinate', coord, log=False)
         self.hyperdash_plot_train_loss('Loss Confidence', conf, log=False)
-        self.hyperdash_plot_train_loss('Loss Class', cls, log=False)
+        if CLASSES > 1:
+            self.hyperdash_plot_train_loss('Loss Class', cls, log=False)
 
         if self.batch % self.backup_rate == 0:
             self.network.save_weights(os.path.join(self.backup_folder, 'weights_{self.batch}.pt'.format(self=self)))
