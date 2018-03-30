@@ -35,11 +35,11 @@ LABELS = ['fish', 'ignore', 'person', 'turtle_green', 'turtle_green+head', 'turt
 CLASSES = len(LABELS)
 
 NETWORK_SIZE = (416, 416)
-CONF_THRESH = 0.001
-NMS_THRESH = 0.4
+CONF_THRESH = 0.0
+NMS_THRESH = 0.0
 
-BATCH = 96
-MINI_BATCH = 16
+BATCH = 64
+MINI_BATCH = 64
 
 
 class CustomDataset(ln.data.BramboxData):
@@ -85,7 +85,7 @@ def test(arguments):
 
     if arguments.visdom:
         log.debug('Creating visdom visualisation wrappers')
-        vis = visdom.Visdom(port=8080)
+        vis = visdom.Visdom(port=VISDOM_PORT)
         plot_pr = ln.engine.VisdomLinePlotter(vis, 'pr', opts=dict(xlabel='Recall', ylabel='Precision', title='Precision Recall', xtickmin=0, xtickmax=1, ytickmin=0, ytickmax=1, showlegend=True))
 
     if arguments.hyperdash:
@@ -126,9 +126,9 @@ def test(arguments):
     conf = round(sum(conf_loss) / len(anno), 2)
     if len(cls_loss) > 0:
         cls = round(sum(cls_loss) / len(anno), 2)
-        log.test('{seen} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf} Cls:{cls})'.format(seen=net.seen // BATCH, m_ap=m_ap, tot=tot, coord=coord, conf=conf, cls=cls))
+        log.test('\n{seen} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf} Cls:{cls})'.format(seen=net.seen // BATCH, m_ap=m_ap, tot=tot, coord=coord, conf=conf, cls=cls))
     else:
-        log.test('{seen} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf})'.format(seen=net.seen // BATCH, m_ap=m_ap, tot=tot, coord=coord, conf=conf))
+        log.test('\n{seen} mAP:{m_ap}% Loss:{tot} (Coord:{coord} Conf:{conf})'.format(seen=net.seen // BATCH, m_ap=m_ap, tot=tot, coord=coord, conf=conf))
 
     name = 'mAP: {m_ap}%'.format(m_ap=m_ap)
     if arguments.visdom:

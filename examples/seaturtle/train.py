@@ -239,7 +239,7 @@ class TrainingEngine(ln.engine.Engine):
         tot_loss = []
         anno, det = {}, {}
 
-        for idx, (data, target) in tqdm(enumerate(self.testloader)):
+        for idx, (data, target) in enumerate(tqdm(self.testloader, total=len(self.testloader))):
             if self.cuda:
                 data = data.cuda(async=PIN_MEM)
 
