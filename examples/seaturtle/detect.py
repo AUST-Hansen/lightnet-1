@@ -88,7 +88,8 @@ if __name__ == '__main__':
 
             bbb.draw_boxes(image, output[0], show_labels=args.label)
             if args.save:
-                cv2.imwrite('detections.png', image)
+                filename = os.path.splitext(os.path.split(img_name)[1])[0]
+                cv2.imwrite('detections_%s.png' % (filename, ), image)
             else:
                 cv2.imshow('image', image)
                 cv2.waitKey(0)
