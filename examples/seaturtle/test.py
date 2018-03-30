@@ -35,8 +35,8 @@ LABELS = ['fish', 'ignore', 'person', 'turtle_green', 'turtle_green+head', 'turt
 CLASSES = len(LABELS)
 
 NETWORK_SIZE = (416, 416)
-CONF_THRESH = 0.0
-NMS_THRESH = 0.0
+CONF_THRESH = 0.01
+NMS_THRESH = 0.8
 
 BATCH = 64
 MINI_BATCH = 64
