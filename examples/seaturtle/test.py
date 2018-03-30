@@ -86,7 +86,7 @@ def test(arguments):
     if arguments.visdom:
         log.debug('Creating visdom visualisation wrappers')
         vis = visdom.Visdom(port=8080)
-        plot_pr = ln.engine.LinePlotter(vis, 'pr', opts=dict(xlabel='Recall', ylabel='Precision', title='Precision Recall', xtickmin=0, xtickmax=1, ytickmin=0, ytickmax=1, showlegend=True))
+        plot_pr = ln.engine.VisdomLinePlotter(vis, 'pr', opts=dict(xlabel='Recall', ylabel='Precision', title='Precision Recall', xtickmin=0, xtickmax=1, ytickmin=0, ytickmax=1, showlegend=True))
 
     if arguments.hyperdash:
         log.debug('Creating hyperdash visualisation wrappers')
