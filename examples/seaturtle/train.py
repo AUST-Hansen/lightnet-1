@@ -258,7 +258,7 @@ class TrainingEngine(ln.engine.Engine):
         pr = bbb.pr(det, anno)
         m_ap = bbb.ap(*pr)
         loss = round(sum(tot_loss) / len(anno), 5)
-        self.log('Loss:{loss} mAP:{m_ap:0.02f}%'.format(loss=loss, m_ap=m_ap * 100.0))
+        self.log('\nLoss:{loss} mAP:{m_ap:0.02f}%'.format(loss=loss, m_ap=m_ap * 100.0))
         self.visdom_plot_test_loss(np.array([loss]), np.array([self.batch]))
         self.hyperdash_plot_train_loss('Loss Total (Test)', loss, log=False)
         self.hyperdash_plot_train_loss('mAP (Test)', m_ap, log=False)
