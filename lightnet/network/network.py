@@ -129,7 +129,7 @@ class Darknet(nn.Module):
             weights_file (str): path to file
         """
         if weights_file is not None:
-            if os.path.splitext(weights_file)[1] == '.pt':
+            if os.path.splitext(weights_file)[1] in ['.pt', '.weights']:
                 log.info('Loading weights from pytorch file')
                 self._load_pickle_weights(weights_file)
             else:
@@ -146,7 +146,7 @@ class Darknet(nn.Module):
             weights_file (str): path to file
         """
         if weights_file is not None:
-            if os.path.splitext(weights_file)[1] == '.pt':
+            if os.path.splitext(weights_file)[1] in ['.pt', '.weights']:
                 log.debug('Saving weights to pytorch file')
                 self._save_pickle_weights(weights_file)
             else:
