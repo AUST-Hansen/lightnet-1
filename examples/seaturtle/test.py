@@ -32,6 +32,7 @@ TESTFILE = '{ROOT}/test.pkl'.format(ROOT=ROOT)
 VISDOM_PORT = 8097
 
 LABELS = ['fish', 'ignore', 'person', 'turtle_green', 'turtle_green+head', 'turtle_hawksbill', 'turtle_hawksbill+head']
+IGNORE = ['fish', 'ignore', 'person']
 CLASSES = len(LABELS)
 
 NETWORK_SIZE = (416, 416)
@@ -117,10 +118,13 @@ def test(arguments):
         anno.update({loader.dataset.keys[key_val + k]: v for k, v in enumerate(box)})
         det.update({loader.dataset.keys[key_val + k]: v for k, v in enumerate(output)})
 
-    log.debug('Computing statistics')
+    pr_dict, ap_dict, m_ap, all_key = bbb.pr_ap_dicts(det, anno, LABELS, IGNORE)
+    pr = pr_dict[all_key]
 
-    pr = bbb.pr(det, anno)
-    m_ap = round(bbb.ap(*pr) * 100, 2)
+    log.info('Computed statistics')
+    for label in sorted(ap_dict.keys()):
+        log.info('\tLabel %r: m_ap = %0.04f' % (label, ap_dict[label], ))
+
     tot = round(sum(tot_loss) / len(anno), 5)
     coord = round(sum(coord_loss) / len(anno), 2)
     conf = round(sum(conf_loss) / len(anno), 2)

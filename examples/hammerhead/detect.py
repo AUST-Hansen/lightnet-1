@@ -20,8 +20,8 @@ LABELS = ['shark_hammerhead']
 CLASSES = len(LABELS)
 
 NETWORK_SIZE = (416, 416)
-CONF_THRESH = 0.40
-NMS_THRESH = 0.60
+CONF_THRESH = 0.4
+NMS_THRESH = 0.5
 
 
 # Functions
