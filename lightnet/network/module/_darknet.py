@@ -73,7 +73,7 @@ class Darknet(Lightnet):
                     log.debug('Finished loading weights [{weights.start}/{weights.size} weights]'.format(weights=weights))
                     break
             except NotImplementedError:
-                log.debug('Layer skipped: {module.__class__.__name__}'.format(module))
+                log.debug('Layer skipped: {name}'.format(name=module.__class__.__name__))
 
     def _save_darknet_weights(self, weights_file, seen=None):
         if seen is None:
