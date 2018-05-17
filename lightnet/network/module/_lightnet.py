@@ -32,6 +32,7 @@ class Lightnet(nn.Module):
         If you use your own ``forward()`` function, you need to update the **self.seen** parameter
         whenever the network is training.
     """
+
     def __init__(self):
         super().__init__()
 
@@ -51,7 +52,7 @@ class Lightnet(nn.Module):
                 x = module(x)
             return x
         else:
-            raise NotImplementedError(f'No _forward function defined and no default behaviour for this type of layers [{type(self.layers)}]')
+            raise NotImplementedError('No _forward function defined and no default behaviour for this type of layers [{layers}]'.format(layers=type(self.layers)))
 
     def forward(self, x, target=None):
         """ This default forward function will compute the output of the network as ``self._forward(x)``.
@@ -134,7 +135,7 @@ class Lightnet(nn.Module):
         if hasattr(self.loss, 'seen'):
             self.loss.seen = self.seen
 
-        log.info(f'Loaded weights from {weights_file}')
+        log.info('Loaded weights from {weights_file}'.format(weights_file=weights_file))
 
     def save_weights(self, weights_file, seen=None):
         """ This function will save the weights to a file.
@@ -152,4 +153,4 @@ class Lightnet(nn.Module):
         }
         torch.save(state, weights_file)
 
-        log.info(f'Saved weights as {weights_file}')
+        log.info('Saved weights as {weights_file}'.format(weights_file=weights_file))

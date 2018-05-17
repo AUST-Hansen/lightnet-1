@@ -75,7 +75,7 @@ class RegionLoss(nn.modules.loss._Loss):
             >>> im_data = torch.autograd.Variable(torch.randn(len(target), 3, Hin, Win))
             >>> output = network._forward(im_data)
             >>> loss = float(region_loss(output, target))
-            >>> print(f'loss = {loss:.2f}')
+            >>> print('loss = {loss:.2f}'.format(loss=loss))
             loss = 20.43
         """
         # Parameters
