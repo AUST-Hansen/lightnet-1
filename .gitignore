@@ -26,3 +26,9 @@ examples/yolo-voc/backup/
 examples/yolo-voc/darknet19_448.conv.23
 examples/yolo-voc/best_pr.log
 
+examples/*/backup/
+examples/*/darknet19_448.conv.23
+examples/*/data/
+examples/*/test.log
+examples/*/train.log
+
