@@ -63,7 +63,6 @@ class CustomDataset(ln.data.BramboxData):
 def test(arguments):
     log.debug('Creating network')
     net = ln.models.Yolo(CLASSES, arguments.weight, CONF_THRESH, NMS_THRESH)
-    net = torch.nn.DataParallel(net)
     net.postprocess.append(ln.data.transform.TensorToBrambox(NETWORK_SIZE, LABELS))
 
     net.eval()
