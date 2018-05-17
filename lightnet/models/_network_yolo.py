@@ -33,7 +33,8 @@ class Yolo(lnn.module.Darknet):
     """
 
     def __init__(self, num_classes=20, weights_file=None, conf_thresh=.25, nms_thresh=.4, input_channels=3,
-                 anchors=[(1.3221, 1.73145), (3.19275, 4.00944), (5.05587, 8.09892), (9.47112, 4.84053), (11.2364, 10.0071)]):
+                 anchors=[(1.3221, 1.73145), (3.19275, 4.00944), (5.05587, 8.09892), (9.47112, 4.84053), (11.2364, 10.0071)],
+                 parallel=True):
         """ Network initialisation """
         super(Yolo, self).__init__()
         if not isinstance(anchors, Iterable) and not isinstance(anchors[0], Iterable):
@@ -92,6 +93,9 @@ class Yolo(lnn.module.Darknet):
             ])
         ]
         self.layers = nn.ModuleList([nn.Sequential(layer_dict) for layer_dict in layer_list])
+
+        if parallel:
+            self.layers = nn.DataParallel(self.layers)
 
         # Post
         self.loss = lnn.loss.RegionLoss(self.num_classes, self.anchors, self.reduction, self.seen)
