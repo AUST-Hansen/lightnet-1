@@ -114,7 +114,7 @@ class DataLoader(torchDataLoader):
         [[(480, 320), (480, 320)]]
     """
 
-    def __init__(self, resize_range=(10, 19), *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(DataLoader, self).__init__(*args, **kwargs)
         self.__initialized = False
         shuffle = False
