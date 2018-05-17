@@ -92,10 +92,12 @@ class Yolo(lnn.module.Darknet):
                 ('29_conv',         nn.Conv2d(1024, len(self.anchors) * (5 + self.num_classes), 1, 1, 0)),
             ])
         ]
-        self.layers = nn.ModuleList([nn.Sequential(layer_dict) for layer_dict in layer_list])
+        sequential_list = [nn.Sequential(layer_dict) for layer_dict in layer_list]
 
         if parallel:
-            self.layers = nn.DataParallel(self.layers)
+            sequential_list = [nn.DataParallel(sequential) for sequential in sequential_list]
+
+        self.layers = nn.ModuleList(sequential_list)
 
         # Post
         self.loss = lnn.loss.RegionLoss(self.num_classes, self.anchors, self.reduction, self.seen)
