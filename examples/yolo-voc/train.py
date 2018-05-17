@@ -14,7 +14,6 @@ import visdom
 import hyperdash
 import torch
 from torchvision import transforms as tf
-# import brambox.boxes as bbb
 import lightnet as ln
 
 log = logging.getLogger('lightnet.train')
@@ -36,8 +35,8 @@ NETWORK_SIZE = (416, 416)
 CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
-BATCH = 96
-MINI_BATCH = 16
+BATCH = 64
+MINI_BATCH = 8
 MAX_BATCHES = 45000
 
 JITTER = 0.2
@@ -61,18 +60,18 @@ RS_STEPS = []
 RS_RATES = []
 
 
-class VOCDataset(ln.data.BramboxData):
+class VOCDataset(ln.models.BramboxDataset):
     def __init__(self, anno):
         def identify(img_id):
             return '{ROOT}/VOCdevkit/{img_id}'.format(ROOT=ROOT, img_id=img_id)
 
-        lb  = ln.data.Letterbox(dataset=self)
-        rf  = ln.data.RandomFlip(FLIP)
-        rc  = ln.data.RandomCrop(JITTER, True, 0.1)
-        hsv = ln.data.HSVShift(HUE, SAT, VAL)
+        lb  = ln.data.transform.Letterbox(dataset=self)
+        rf  = ln.data.transform.RandomFlip(FLIP)
+        rc  = ln.data.transform.RandomCrop(JITTER, True, 0.1)
+        hsv = ln.data.transform.HSVShift(HUE, SAT, VAL)
         it  = tf.ToTensor()
-        img_tf = tf.Compose([hsv, rc, rf, lb, it])
-        anno_tf = tf.Compose([rc, rf, lb])
+        img_tf = ln.data.transform.Compose([hsv, rc, rf, lb, it])
+        anno_tf = ln.data.transform.Compose([rc, rf, lb])
 
         super(VOCDataset, self).__init__('anno_pickle', anno, NETWORK_SIZE, LABELS, identify, img_tf, anno_tf)
 
@@ -92,10 +91,7 @@ class VOCTrainingEngine(ln.engine.Engine):
 
         log.debug('Creating network')
         net = ln.models.Yolo(CLASSES, arguments.weight, CONF_THRESH, NMS_THRESH)
-        net.postprocess = tf.Compose([
-            net.postprocess,
-            ln.data.TensorToBrambox(NETWORK_SIZE, LABELS),
-        ])
+        net.postprocess.append(ln.data.transform.TensorToBrambox(NETWORK_SIZE, LABELS))
         if self.cuda:
             net.cuda()
 
@@ -121,7 +117,6 @@ class VOCTrainingEngine(ln.engine.Engine):
             legend = ['Total loss', 'Coordinate loss', 'Confidence loss', 'Class loss']
         else:
             legend = ['Total loss', 'Coordinate loss', 'Confidence loss']
-
         self.visdom_plot_train_loss = ln.engine.VisdomLinePlotter(
             self.visdom,
             'train_loss',
@@ -156,11 +151,18 @@ class VOCTrainingEngine(ln.engine.Engine):
         loss = self.network(data, target)
         loss.backward()
 
-        self.train_loss['tot'].append(self.network.loss.loss_tot.data[0])
-        self.train_loss['coord'].append(self.network.loss.loss_coord.data[0])
-        self.train_loss['conf'].append(self.network.loss.loss_conf.data[0])
-        if self.network.loss.loss_cls is not None:
-            self.train_loss['cls'].append(self.network.loss.loss_cls.data[0])
+        if torch.__version__.startswith('0.3'):
+            self.train_loss['tot'].append(self.network.loss.loss_tot.data[0])
+            self.train_loss['coord'].append(self.network.loss.loss_coord.data[0])
+            self.train_loss['conf'].append(self.network.loss.loss_conf.data[0])
+            if self.network.loss.loss_cls is not None:
+                self.train_loss['cls'].append(self.network.loss.loss_cls.data[0])
+        else:
+            self.train_loss['tot'].append(self.network.loss.loss_tot.item())
+            self.train_loss['coord'].append(self.network.loss.loss_coord.item())
+            self.train_loss['conf'].append(self.network.loss.loss_conf.item())
+            if self.network.loss.loss_cls is not None:
+                self.train_loss['cls'].append(self.network.loss.loss_cls.item())
 
     def train_batch(self):
         self.optimizer.step()

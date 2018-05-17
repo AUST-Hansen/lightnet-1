@@ -14,7 +14,7 @@ __all__ = ['logger']
 
 # Formatter
 class ColorCode(Enum):
-    """Color codes."""
+    """ Color Codes """
 
     RESET = '\033[00m'
     BOLD = '\033[01m'
@@ -53,7 +53,7 @@ class ColoredFormatter(logging.Formatter):
         return logging.Formatter.format(self, record)
 
     def setColor(self, value):
-        """Enable or disable colored output for this handler."""
+        """ Enable or disable colored output for this handler """
         self.color = value
 
 

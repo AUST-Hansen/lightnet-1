@@ -37,8 +37,8 @@ NETWORK_SIZE = (416, 416)
 CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
-BATCH = 96
-MINI_BATCH = 16
+BATCH = 64
+MINI_BATCH = 8
 
 
 class CustomDataset(ln.data.BramboxData):
@@ -46,10 +46,10 @@ class CustomDataset(ln.data.BramboxData):
         def identify(img_id):
             return '{ROOT}/VOCdevkit/{img_id}'.format(ROOT=ROOT, img_id=img_id)
 
-        lb  = ln.data.Letterbox(NETWORK_SIZE)
+        lb  = ln.data.transform.Letterbox(NETWORK_SIZE)
         it  = tf.ToTensor()
-        img_tf = tf.Compose([lb, it])
-        anno_tf = tf.Compose([lb])
+        img_tf = ln.data.transform.Compose([lb, it])
+        anno_tf = ln.data.transform.Compose([lb])
 
         super(CustomDataset, self).__init__('anno_pickle', anno, NETWORK_SIZE, LABELS, identify, img_tf, anno_tf)
 
@@ -63,10 +63,8 @@ class CustomDataset(ln.data.BramboxData):
 def test(arguments):
     log.debug('Creating network')
     net = ln.models.Yolo(CLASSES, arguments.weight, CONF_THRESH, NMS_THRESH)
-    net.postprocess = tf.Compose([
-        net.postprocess,
-        ln.data.TensorToBrambox(NETWORK_SIZE, LABELS),
-    ])
+    net.postprocess.append(ln.data.transform.TensorToBrambox(NETWORK_SIZE, LABELS))
+
     net.eval()
     if arguments.cuda:
         net.cuda()
@@ -102,15 +100,26 @@ def test(arguments):
     for idx, (data, box) in enumerate(tqdm(loader, total=len(loader))):
         if arguments.cuda:
             data = data.cuda()
-        data = torch.autograd.Variable(data, volatile=True)
 
-        output, loss = net(data, box)
+        if torch.__version__.startswith('0.3'):
+            data = torch.autograd.Variable(data, volatile=True)
+            output, loss = net(data, box)
+        else:
+            with torch.no_grad():
+                output, loss = net(data, box)
 
-        tot_loss.append(net.loss.loss_tot.data[0] * len(box))
-        coord_loss.append(net.loss.loss_coord.data[0] * len(box))
-        conf_loss.append(net.loss.loss_conf.data[0] * len(box))
-        if net.loss.loss_cls is not None:
-            cls_loss.append(net.loss.loss_cls.data[0] * len(box))
+        if torch.__version__.startswith('0.3'):
+            tot_loss.append(net.loss.loss_tot.data[0] * len(box))
+            coord_loss.append(net.loss.loss_coord.data[0] * len(box))
+            conf_loss.append(net.loss.loss_conf.data[0] * len(box))
+            if net.loss.loss_cls is not None:
+                cls_loss.append(net.loss.loss_cls.data[0] * len(box))
+        else:
+            tot_loss.append(net.loss.loss_tot.item() * len(box))
+            coord_loss.append(net.loss.loss_coord.item() * len(box))
+            conf_loss.append(net.loss.loss_conf.item() * len(box))
+            if net.loss.loss_cls is not None:
+                cls_loss.append(net.loss.loss_cls.item() * len(box))
 
         key_val = len(anno)
         anno.update({loader.dataset.keys[key_val + k]: v for k, v in enumerate(box)})

@@ -25,37 +25,38 @@ NMS_THRESH = .4
 
 # Functions
 def create_network():
-    """Create the lightnet network."""
-    net = ln.models.Yolo(CLASSES, args.weight)
-    net.postprocess = tf.Compose([
-        ln.data.GetBoundingBoxes(net, CONF_THRESH, NMS_THRESH),
-        ln.data.TensorToBrambox(network_size=NETWORK_SIZE, class_label_map=LABELS),
-    ])
+    """ Create the lightnet network """
+    net = ln.models.Yolo(CLASSES, args.weight, CONF_THRESH, NMS_THRESH)
+    net.postprocess.append(ln.data.transform.TensorToBrambox(NETWORK_SIZE, LABELS))
 
+    net.eval()
     if args.cuda:
         net.cuda()
-    net.eval()
 
     return net
 
 
 def detect(net, img_path):
-    """Perform a detection."""
+    """ Perform a detection """
     # Load image
     img = cv2.imread(img_path)
     im_h, im_w = img.shape[:2]
 
     img_tf = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img_tf = ln.data.Letterbox.apply(img_tf, dimension=NETWORK_SIZE)
+    img_tf = ln.data.transform.Letterbox.apply(img_tf, dimension=NETWORK_SIZE)
     img_tf = tf.ToTensor()(img_tf)
     img_tf.unsqueeze_(0)
     if args.cuda:
         img_tf = img_tf.cuda()
-    img_tf = torch.autograd.Variable(img_tf, volatile=True)
 
     # Run detector
-    out = net(img_tf)
-    out = ln.data.ReverseLetterbox.apply(out, NETWORK_SIZE, (im_w, im_h))
+    if torch.__version__.startswith('0.3'):
+        img_tf = torch.autograd.Variable(img_tf, volatile=True)
+        out = net(img_tf)
+    else:
+        with torch.no_grad():
+            out = net(img_tf)
+    out = ln.data.transform.ReverseLetterbox.apply(out, NETWORK_SIZE, (im_w, im_h))
 
     return img, out
 

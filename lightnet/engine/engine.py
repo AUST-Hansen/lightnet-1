@@ -5,7 +5,7 @@
 
 import logging
 import signal
-
+from abc import abstractmethod
 import lightnet as ln
 
 __all__ = ['Engine']
@@ -188,11 +188,37 @@ class Engine:
             values (list): New values that will be used for the attribute
             default (optional): Default value to use for the rate; Default **None**
 
+        Note:
+            You can also set the ``learning_rate`` with this method.
+            This will actually use the ``learning_rate`` computed property of this class and set the learning rate of the optimizer. |br|
+            This is great for automating adaptive learning rates, and can work in conjunction with pytorch schedulers.
+
         Example:
             >>> import lightnet as ln
-            >>> eng = ln.engine.Engine(...)
-            >>> eng.add_rate('test_rate', [1000, 5000], [100, 500], 50)
-            >>> eng.add_rate('learning_rate', [100, 1000, 10000], [.01, .001, .0001]) # Learning rate already has a value
+            >>> class MyEngine(ln.engine.Engine):
+            ...     batch_size = 2
+            ...     def process_batch(self, data):
+            ...         raise NotImplementedError()
+            ...     def train_batch(self):
+            ...         raise NotImplementedError()
+            >>> net = ln.models.Yolo()
+            >>> eng = MyEngine(
+            ...     net,
+            ...     torch.optim.SGD(net.parameters(), lr=.1),
+            ...     None    # Should be dataloader
+            ... )
+            >>> eng.add_rate('test_rate', [1000, 10000], [100, 500], 50)
+            >>> eng.add_rate('learning_rate', [1000, 10000], [.01, .001])
+            >>> eng.test_rate
+            50
+            >>> eng.learning_rate
+            0.1
+            >>> net.seen = 2000     # batch_size = 2
+            >>> eng._update_rates() # Happens automatically during training loop
+            >>> eng.test_rate
+            100
+            >>> eng.learning_rate
+            0.01
         """
         if default is not None or not hasattr(self, name):
             setattr(self, name, default)
@@ -235,23 +261,21 @@ class Engine:
         """
         pass
 
+    @abstractmethod
     def process_batch(self, data):
-        """The function should contain the code to process the forward and backward pass of one (mini-)batch."""
-        log.error('process_batch() function is not implemented')
-        raise NotImplementedError
+        """ This function should contain the code to process the forward and backward pass of one (mini-)batch. """
+        pass
 
+    @abstractmethod
     def train_batch(self):
-        """The function should contain the code to update the weights of the network.
-
-        |br|
+        """ This function should contain the code to update the weights of the network. |br|
         Statistical computations, performing backups at regular intervals, etc. also happen here.
         """
-        log.error('train_batch() function is not implemented')
-        raise NotImplementedError
+        pass
 
     def test(self):
-        """The function should contain the code to perform an evaluation on your test-set."""
-        log.warn('test() function is not implemented')
+        """ This function should contain the code to perform an evaluation on your test-set. """
+        log.error('test() function is not implemented')
 
     def quit(self):
         """The function gets called after every training epoch and decides if the training cycle continues.

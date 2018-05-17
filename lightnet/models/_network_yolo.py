@@ -3,19 +3,17 @@
 #   Copyright EAVISE
 #
 
-from collections import OrderedDict
+from collections import OrderedDict, Iterable
 import torch
 import torch.nn as nn
-
 import lightnet.network as lnn
 import lightnet.data as lnd
 
 __all__ = ['Yolo']
 
 
-class Yolo(lnn.Darknet):
-    """`Yolo v2`_ implementation with pytorch.
-
+class Yolo(lnn.module.Darknet):
+    """ `Yolo v2`_ implementation with pytorch.
     This network uses :class:`~lightnet.network.RegionLoss` as its loss function
     and :class:`~lightnet.data.GetBoundingBoxes` as its default postprocessing function.
 
@@ -25,24 +23,26 @@ class Yolo(lnn.Darknet):
         conf_thresh (Number, optional): Confidence threshold for postprocessing of the boxes; Default **0.25**
         nms_thresh (Number, optional): Non-maxima suppression threshold for postprocessing; Default **0.4**
         input_channels (Number, optional): Number of input channels; Default **3**
-        anchors (dict, optional): Dictionary containing `num` and `values` properties with anchor values; Default **Yolo v2 anchors**
+        anchors (list, optional): 2D list with anchor values; Default **Yolo v2 anchors**
 
     Attributes:
         self.loss (fn): loss function. Usually this is :class:`~lightnet.network.RegionLoss`
-        self.postprocess (fn): Postprocessing function. By default this is :class:`~lightnet.data.GetBoundingBoxes`
+        self.postprocess (fn): Postprocessing function. By default this is :class:`~lightnet.data.GetBoundingBoxes` + :class:`~lightnet.data.NonMaxSupression`
 
     .. _Yolo v2: https://github.com/pjreddie/darknet/blob/777b0982322142991e1861161e68e1a01063d76f/cfg/yolo-voc.cfg
     """
 
-    def __init__(self, num_classes=20, weights_file=None, conf_thresh=.25, nms_thresh=.4, input_channels=3, anchors=dict(num=5, values=[1.3221, 1.73145, 3.19275, 4.00944, 5.05587, 8.09892, 9.47112, 4.84053, 11.2364, 10.0071])):
-        """Network initialization."""
+    def __init__(self, num_classes=20, weights_file=None, conf_thresh=.25, nms_thresh=.4, input_channels=3,
+                 anchors=[(1.3221, 1.73145), (3.19275, 4.00944), (5.05587, 8.09892), (9.47112, 4.84053), (11.2364, 10.0071)]):
+        """ Network initialisation """
         super(Yolo, self).__init__()
+        if not isinstance(anchors, Iterable) and not isinstance(anchors[0], Iterable):
+            raise TypeError('Anchors need to be a 2D list of numbers')
 
         # Parameters
         self.num_classes = num_classes
-        self.num_anchors = anchors['num']
-        self.anchors = anchors['values']
-        self.reduction = 32             # input_dim/output_dim
+        self.anchors = anchors
+        self.reduction = 32     # input_dim/output_dim
 
         # Network
         layer_list = [
@@ -88,14 +88,20 @@ class Yolo(lnn.Darknet):
             # Sequence 3 : input = sequence2 + sequence1
             OrderedDict([
                 ('28_convbatch',    lnn.layer.Conv2dBatchLeaky((4 * 64) + 1024, 1024, 3, 1, 1)),
-                ('29_conv',         nn.Conv2d(1024, self.num_anchors * (5 + self.num_classes), 1, 1, 0)),
+                ('29_conv',         nn.Conv2d(1024, len(self.anchors) * (5 + self.num_classes), 1, 1, 0)),
             ])
         ]
         self.layers = nn.ModuleList([nn.Sequential(layer_dict) for layer_dict in layer_list])
 
-        self.load_weights(weights_file)
-        self.loss = lnn.RegionLoss(self)
-        self.postprocess = lnd.GetBoundingBoxes(self, conf_thresh, nms_thresh)
+        # Post
+        self.loss = lnn.loss.RegionLoss(self.num_classes, self.anchors, self.reduction, self.seen)
+        self.postprocess = lnd.transform.Compose([
+            lnd.transform.GetBoundingBoxes(self.num_classes, self.anchors, conf_thresh),
+            lnd.transform.NonMaxSupression(nms_thresh, False)
+        ])
+
+        if weights_file is not None:
+            self.load_weights(weights_file)
 
     def _forward(self, x):
         outputs = []

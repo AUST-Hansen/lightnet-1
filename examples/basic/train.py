@@ -12,7 +12,6 @@ from statistics import mean
 import visdom
 import numpy as np
 import torch
-from torchvision import transforms as tf
 import brambox.boxes as bbb
 import lightnet as ln
 
@@ -73,17 +72,15 @@ class TrainingEngine(ln.engine.Engine):
 
         log.debug('Creating network')
         net = ln.models.Yolo(CLASSES, arguments.weight, CONF_THRESH, NMS_THRESH)
-        net.postprocess = tf.Compose([
-            net.postprocess,
-            ln.data.TensorToBrambox(NETWORK_SIZE, LABELS),
-        ])
+
+        net.postprocess.append(ln.data.transform.TensorToBrambox(NETWORK_SIZE, LABELS))
         if self.cuda:
             net.cuda()
         optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE / BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY * BATCH)
 
         log.debug('Creating datasets')
         data = ln.data.DataLoader(
-            ln.models.DarknetData(TRAINFILE, input_dimension=NETWORK_SIZE, class_label_map=LABELS),
+            ln.models.DarknetDataset(TRAINFILE, input_dimension=NETWORK_SIZE, class_label_map=LABELS),
             batch_size=MINI_BATCH,
             shuffle=True,
             drop_last=True,
@@ -93,7 +90,7 @@ class TrainingEngine(ln.engine.Engine):
         )
         if self.enable_testing is not None:
             self.testloader = torch.utils.data.DataLoader(
-                ln.models.DarknetData(VALIDFILE, False, input_dimension=NETWORK_SIZE, class_label_map=LABELS),
+                ln.models.DarknetDataset(VALIDFILE, False, input_dimension=NETWORK_SIZE, class_label_map=LABELS),
                 batch_size=MINI_BATCH,
                 shuffle=False,
                 drop_last=False,
@@ -105,11 +102,12 @@ class TrainingEngine(ln.engine.Engine):
         super(TrainingEngine, self).__init__(net, optim, data)
 
     def start(self):
-        """Starting values."""
+        """ Starting values """
         if CLASSES > 1:
             legend = ['Total loss', 'Coordinate loss', 'Confidence loss', 'Class loss']
         else:
             legend = ['Total loss', 'Coordinate loss', 'Confidence loss']
+
         self.plot_train_loss = ln.engine.LinePlotter(
             self.visdom,
             'train_loss',
@@ -165,11 +163,18 @@ class TrainingEngine(ln.engine.Engine):
         loss = self.network(data, target)
         loss.backward()
 
-        self.train_loss['tot'].append(self.network.loss.loss_tot.data[0])
-        self.train_loss['coord'].append(self.network.loss.loss_coord.data[0])
-        self.train_loss['conf'].append(self.network.loss.loss_conf.data[0])
-        if CLASSES > 1:
-            self.train_loss['cls'].append(self.network.loss.loss_cls.data[0])
+        if torch.__version__.startswith('0.3'):
+            self.train_loss['tot'].append(self.network.loss.loss_tot.data[0])
+            self.train_loss['coord'].append(self.network.loss.loss_coord.data[0])
+            self.train_loss['conf'].append(self.network.loss.loss_conf.data[0])
+            if CLASSES > 1:
+                self.train_loss['cls'].append(self.network.loss.loss_cls.data[0])
+        else:
+            self.train_loss['tot'].append(self.network.loss.loss_tot.item())
+            self.train_loss['coord'].append(self.network.loss.loss_coord.item())
+            self.train_loss['conf'].append(self.network.loss.loss_conf.item())
+            if CLASSES > 1:
+                self.train_loss['cls'].append(self.network.loss.loss_cls.item())
 
     def train_batch(self):
         self.optimizer.step()
@@ -202,11 +207,16 @@ class TrainingEngine(ln.engine.Engine):
         for idx, (data, target) in enumerate(self.testloader):
             if self.cuda:
                 data = data.cuda()
-            data = torch.autograd.Variable(data, volatile=True)
 
-            output, loss = self.network(data, target)
+            if torch.__version__.startswith('0.3'):
+                data = torch.autograd.Variable(data, volatile=True)
+                output, loss = self.network(data, target)
+                tot_loss.append(loss.data[0] * len(target))
+            else:
+                with torch.no_grad():
+                    output, loss = self.network(data, target)
+                tot_loss.append(loss.item() * len(target))
 
-            tot_loss.append(loss.data[0] * len(target))
             key_val = len(anno)
             anno.update({key_val + k: v for k, v in enumerate(target)})
             det.update({key_val + k: v for k, v in enumerate(output)})

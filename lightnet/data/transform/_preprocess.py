@@ -12,16 +12,16 @@ import torch
 import numpy as np
 from PIL import Image, ImageOps
 import brambox.boxes as bbb
+from .util import BaseTransform, BaseMultiTransform
 
 from .process import *  # NOQA
 log = logging.getLogger(__name__)
 
 try:
     import cv2
-except:
+except ImportError:
     log.warn('OpenCV is not installed and cannot be used')
     cv2 = None
-
 
 __all__ = ['Letterbox', 'RandomCrop', 'RandomFlip', 'HSVShift', 'BramboxToTensor']
 
@@ -31,7 +31,7 @@ class Letterbox(BaseMultiTransform):
 
     Args:
         dimension (tuple, optional): Default size for the letterboxing, expressed as a (width, height) tuple; Default **None**
-        dataset (lightnet.data.BramboxData, optional): Dataset that uses this transform; Default **None**
+        dataset (lightnet.data.Dataset, optional): Dataset that uses this transform; Default **None**
 
     Note:
         Create 1 Letterbox object and use it for both image and annotation transforms.
@@ -39,11 +39,10 @@ class Letterbox(BaseMultiTransform):
     """
 
     def __init__(self, dimension=None, dataset=None):
-        if dimension is None and dataset is None:
-            log.error('This transform either requires a dimension or a dataset to infer the dimension')
-            raise ValueError
-        self.dimension = dimension
-        self.dataset = dataset
+        super().__init__(dimension=dimension, dataset=dataset)
+        if self.dimension is None and self.dataset is None:
+            raise ValueError('This transform either requires a dimension or a dataset to infer the dimension')
+
         self.pad = None
         self.scale = None
         self.fill_color = 127
@@ -59,7 +58,7 @@ class Letterbox(BaseMultiTransform):
             return self._tf_cv(data)
         else:
             log.error('Letterbox only works with <brambox annotation lists>, <PIL images> or <OpenCV images> [{type_}]'.format(type_=type(data)))
-            raise TypeError
+            return data
 
     def _tf_pil(self, img):
         """Letterbox an image to fit in the network."""
@@ -82,7 +81,7 @@ class Letterbox(BaseMultiTransform):
         if self.scale != 1:
             bands = img.split()
             bands = [b.resize((int(self.scale * im_w), int(self.scale * im_h))) for b in bands]
-            img  = Image.merge(img.mode, bands)
+            img = Image.merge(img.mode, bands)
             im_w, im_h = img.size
 
         if im_w == net_w and im_h == net_h:
@@ -159,9 +158,8 @@ class RandomCrop(BaseMultiTransform):
         This object will save data from the image transform and use that on the annotation transform.
     """
 
-    def __init__(self, jitter, crop_anno=False, intersection_threshold=0.001):
-        self.jitter = jitter
-        self.crop_anno = crop_anno
+    def __init__(self, jitter, crop_anno=False, intersection_threshold=0.001, fill_color=127):
+        super().__init__(jitter=jitter, crop_anno=crop_anno, fill_color=fill_color)
         self.crop_modifier = bbb.CropModifier(float('Inf'), intersection_threshold)
         self.fill_color = 127
 
@@ -176,7 +174,7 @@ class RandomCrop(BaseMultiTransform):
             return self._tf_cv(data)
         else:
             log.error('RandomCrop only works with <brambox annotation lists>, <PIL images> or <OpenCV images> [{type_}]'.format(type_=type(data)))
-            raise TypeError
+            return data
 
     def _tf_pil(self, img):
         """Take random crop from image."""
@@ -258,15 +256,15 @@ class RandomFlip(BaseMultiTransform):
     """Randomly flip image.
 
     Args:
-        flip_threshold (Number [0-1]): Chance of flipping the image
+        threshold (Number [0-1]): Chance of flipping the image
 
     Note:
         Create 1 RandomFlip object and use it for both image and annotation transforms.
         This object will save data from the image transform and use that on the annotation transform.
     """
 
-    def __init__(self, flip_threshold):
-        self.thresh = flip_threshold
+    def __init__(self, threshold):
+        self.threshold = threshold
         self.flip = False
         self.im_w = None
 
@@ -281,7 +279,7 @@ class RandomFlip(BaseMultiTransform):
             return self._tf_cv(data)
         else:
             log.error('RandomFlip only works with <brambox annotation lists>, <PIL images> or <OpenCV images> [{type_}]'.format(type_=type(data)))
-            raise TypeError
+            return data
 
     def _tf_pil(self, img):
         """Randomly flip image."""
@@ -300,14 +298,10 @@ class RandomFlip(BaseMultiTransform):
         return img
 
     def _get_flip(self):
-        self.flip = random.random() < self.thresh
+        self.flip = random.random() < self.threshold
 
     def _tf_anno(self, anno):
-        """Change coordinates of an annotation, according to the previous flip."""
-        if not isinstance(anno, bbb.annotations.Annotation):
-            log.error('RandomFlip only works with lists of <brambox annotations> [{type_}]'.format(type_=type(annot)))
-            raise TypeError
-
+        """ Change coordinates of an annotation, according to the previous flip """
         if self.flip and self.im_w is not None:
             anno.x_top_left = self.im_w - anno.x_top_left - anno.width
         return anno
@@ -329,9 +323,7 @@ class HSVShift(BaseTransform):
     """
 
     def __init__(self, hue, saturation, value):
-        self.hue = hue
-        self.saturation = saturation
-        self.value = value
+        super().__init__(hue=hue, saturation=saturation, value=value)
 
     @classmethod
     def apply(cls, data, hue, saturation, value):
@@ -351,7 +343,7 @@ class HSVShift(BaseTransform):
             return cls._tf_cv(data, dh, ds, dv)
         else:
             log.error('HSVShift only works with <PIL images> or <OpenCV images> [{type_}]'.format(type_=type(data)))
-            raise TypeError
+            return data
 
     @staticmethod
     def _tf_pil(img, dh, ds, dv):
@@ -360,11 +352,11 @@ class HSVShift(BaseTransform):
         channels = list(img.split())
 
         def change_hue(x):
-            x += int(dh * x)
-            while x > 255:
+            x += int(dh * 255)
+            if x > 255:
                 x -= 255
-            while x < 0:
-                x += 255
+            elif x < 0:
+                x += 0
             return x
 
         channels[0] = channels[0].point(change_hue)
@@ -377,22 +369,21 @@ class HSVShift(BaseTransform):
 
     @staticmethod
     def _tf_cv(img, dh, ds, dv):
-        """Random hsv shift."""
+        """ Random hsv shift """
+        img = img.astype(np.float32) / 255.0
         img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
 
-        def change_hue(x):
-            x += int(dh * x)
-            while x > 255:
-                x -= 255
-            while x < 0:
-                x += 255
+        def wrap_hue(x):
+            x[x >= 360.0] -= 360.0
+            x[x < 0.0] += 360.0
             return x
 
-        img[:, :, 0] = np.vectorize(change_hue)(img[:, :, 0])
-        img[:, :, 1] = np.vectorize(lambda i: min(255, max(0, int(i * ds))))(img[:, :, 1])
-        img[:, :, 2] = np.vectorize(lambda i: min(255, max(0, int(i * dv))))(img[:, :, 2])
+        img[:, :, 0] = wrap_hue(hsv[:, :, 0] + (360.0 * dh))
+        img[:, :, 1] = np.clip(ds * img[:, :, 1], 0.0, 1.0)
+        img[:, :, 2] = np.clip(dv * img[:, :, 2], 0.0, 1.0)
 
         img = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
+        img = (img * 255).astype(np.uint8)
         return img
 
 
@@ -401,7 +392,7 @@ class BramboxToTensor(BaseTransform):
 
     Args:
         dimension (tuple, optional): Default size of the transformed images, expressed as a (width, height) tuple; Default **None**
-        dataset (lightnet.data.BramboxData, optional): Dataset that uses this transform; Default **None**
+        dataset (lightnet.data.Dataset, optional): Dataset that uses this transform; Default **None**
         max_anno (Number, optional): Maximum number of annotations in the list; Default **50**
         class_label_map (list, optional): class label map to convert class names to an index; Default **None**
 
@@ -413,16 +404,11 @@ class BramboxToTensor(BaseTransform):
     """
 
     def __init__(self, dimension=None, dataset=None, max_anno=50, class_label_map=None):
-        if dataset is None and dimension is None:
-            log.error('This transform either requires a dimension or a dataset to infer the dimension')
-            raise ValueError
-        if class_label_map is None:
+        super().__init__(dimension=dimension, dataset=dataset, max_anno=max_anno, class_label_map=class_label_map)
+        if self.dimension is None and self.dataset is None:
+            raise ValueError('This transform either requires a dimension or a dataset to infer the dimension')
+        if self.class_label_map is None:
             log.warn('No class_label_map given. If the class_labels are not integers, they will be set to zero.')
-
-        self.dimension = dimension
-        self.dataset = dataset
-        self.max_anno = max_anno
-        self.class_label_map = class_label_map
 
     def __call__(self, data):
         if self.dataset is not None:
@@ -434,18 +420,16 @@ class BramboxToTensor(BaseTransform):
     @classmethod
     def apply(cls, data, dimension, max_anno=None, class_label_map=None):
         if not isinstance(data, collections.Sequence):
-            log.error('BramboxToTensor only works with <brambox annotation list> [{type_}]'.format(type_=type(data)))
-            raise TypeError
+            raise TypeError('BramboxToTensor only works with <brambox annotation list> [{type_}]'.format(type_=type(data)))
 
-        anno_np = np.array([cls._tf_anno(anno, dimension, class_label_map) for anno in data], dtype=np.float64)
+        anno_np = np.array([cls._tf_anno(anno, dimension, class_label_map) for anno in data], dtype=np.float32)
 
         if max_anno is not None:
             anno_len = len(data)
             if anno_len > max_anno:
-                log.error('More annotations than maximum allowed [{anno_len}/{max_anno}]'.format(annot_len=anno_len, max_anno=max_anno))
-                raise ValueError
+                raise ValueError('More annotations than maximum allowed [{anno_len}/{max_anno}]'.format(annot_len=anno_len, max_anno=max_anno))
 
-            z_np = np.zeros((max_anno - anno_len, 5), dtype=np.float64)
+            z_np = np.zeros((max_anno - anno_len, 5), dtype=np.float32)
             z_np[:, 0] = -1
 
             if anno_len > 0:
@@ -465,7 +449,7 @@ class BramboxToTensor(BaseTransform):
         else:
             try:
                 cls = int(anno.class_label)
-            except:
+            except ValueError:
                 cls = 0
 
         cx = (anno.x_top_left + (anno.width / 2)) / net_w

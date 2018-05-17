@@ -12,7 +12,6 @@ import numpy as np
 from tqdm import tqdm
 import visdom
 import torch
-from torchvision import transforms as tf
 import brambox.boxes as bbb
 import lightnet as ln
 
@@ -40,17 +39,14 @@ MINI_BATCH = 8
 def test(arguments):
     log.debug('Creating network')
     net = ln.models.Yolo(CLASSES, arguments.weight, CONF_THRESH, NMS_THRESH)
-    net.postprocess = tf.Compose([
-        net.postprocess,
-        ln.data.TensorToBrambox(NETWORK_SIZE, LABELS),
-    ])
+    net.postprocess.append(ln.data.transform.TensorToBrambox(NETWORK_SIZE, LABELS))
     net.eval()
     if arguments.cuda:
         net.cuda()
 
     log.debug('Creating dataset')
     loader = torch.utils.data.DataLoader(
-        ln.models.DarknetData(TESTFILE, input_dimension=NETWORK_SIZE, class_label_map=LABELS),
+        ln.models.DarknetDataset(TESTFILE, augment=False, input_dimension=NETWORK_SIZE, class_label_map=LABELS),
         batch_size=MINI_BATCH,
         shuffle=False,
         drop_last=False,
@@ -74,15 +70,26 @@ def test(arguments):
     for idx, (data, box) in enumerate(tqdm(loader, total=len(loader))):
         if arguments.cuda:
             data = data.cuda()
-        data = torch.autograd.Variable(data, volatile=True)
 
-        output, loss = net(data, box)
+        if torch.__version__.startswith('0.3'):
+            data = torch.autograd.Variable(data, volatile=True)
+            output, loss = net(data, box)
+        else:
+            with torch.no_grad():
+                output, loss = net(data, box)
 
-        tot_loss.append(net.loss.loss_tot.data[0] * len(box))
-        coord_loss.append(net.loss.loss_coord.data[0] * len(box))
-        conf_loss.append(net.loss.loss_conf.data[0] * len(box))
-        if net.loss.loss_cls is not None:
-            cls_loss.append(net.loss.loss_cls.data[0] * len(box))
+        if torch.__version__.startswith('0.3'):
+            tot_loss.append(net.loss.loss_tot.data[0] * len(box))
+            coord_loss.append(net.loss.loss_coord.data[0] * len(box))
+            conf_loss.append(net.loss.loss_conf.data[0] * len(box))
+            if net.loss.loss_cls is not None:
+                cls_loss.append(net.loss.loss_cls.data[0] * len(box))
+        else:
+            tot_loss.append(net.loss.loss_tot.item() * len(box))
+            coord_loss.append(net.loss.loss_coord.item() * len(box))
+            conf_loss.append(net.loss.loss_conf.item() * len(box))
+            if net.loss.loss_cls is not None:
+                cls_loss.append(net.loss.loss_cls.item() * len(box))
 
         key_val = len(anno)
         anno.update({loader.dataset.keys[key_val + k]: v for k, v in enumerate(box)})
