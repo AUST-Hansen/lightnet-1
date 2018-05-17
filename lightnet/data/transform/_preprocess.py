@@ -14,7 +14,6 @@ from PIL import Image, ImageOps
 import brambox.boxes as bbb
 from .util import BaseTransform, BaseMultiTransform
 
-from .process import *  # NOQA
 log = logging.getLogger(__name__)
 
 try:
@@ -378,7 +377,7 @@ class HSVShift(BaseTransform):
             x[x < 0.0] += 360.0
             return x
 
-        img[:, :, 0] = wrap_hue(hsv[:, :, 0] + (360.0 * dh))
+        img[:, :, 0] = wrap_hue(img[:, :, 0] + (360.0 * dh))
         img[:, :, 1] = np.clip(ds * img[:, :, 1], 0.0, 1.0)
         img[:, :, 2] = np.clip(dv * img[:, :, 2], 0.0, 1.0)
 
