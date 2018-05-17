@@ -187,7 +187,9 @@ class BatchSampler(torchBatchSampler):
     whilst ensuring it stays the same across one mini-batch.
     """
 
-    def __init__(self, input_dimension=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        if 'input_dimension' in kwargs:
+            input_dimension = kwargs.pop('input_dimension')
         super(BatchSampler, self).__init__(*args, **kwargs)
         self.input_dim = input_dimension
         self.new_input_dim = None
