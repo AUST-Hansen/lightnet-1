@@ -23,7 +23,7 @@ ln.logger.setLogFile('best_pr.log', filemode='a')           # Enable logging of 
 #ln.logger.setConsoleColor(False)                           # Disable colored terminal output
 
 # Parameters
-WORKERS = 20
+WORKERS = 8
 PIN_MEM = True
 ROOT = 'data'
 TESTFILE = '{ROOT}/test.pkl'.format(ROOT=ROOT)
@@ -37,7 +37,7 @@ NETWORK_SIZE = (416, 416)
 CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
-BATCH = 64
+BATCH = 196
 MINI_BATCH = 8
 
 
