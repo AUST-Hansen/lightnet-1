@@ -70,7 +70,7 @@ class GetBoundingBoxes(BaseTransform):
         # Compute class_score
         if num_classes > 1:
             if torch.__version__.startswith('0.3'):
-                cls_scores = torch.nn.functional.softmax(Variable(network_output[:, :, 5:, :], volatile=True), 2).data
+                cls_scores = torch.nn.functional.softmax(Variable(network_output[:, :, 5:, :]).no_grad(), 2).data
             else:
                 with torch.no_grad():
                     cls_scores = torch.nn.functional.softmax(network_output[:, :, 5:, :], 2)

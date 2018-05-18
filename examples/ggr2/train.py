@@ -248,7 +248,7 @@ class TrainingEngine(ln.engine.Engine):
             if self.cuda:
                 data = data.cuda(non_blocking=PIN_MEM)
 
-            data = torch.autograd.Variable(data, volatile=True)
+            data = torch.autograd.Variable(data).no_grad()
 
             output, loss = self.network(data, target)
 

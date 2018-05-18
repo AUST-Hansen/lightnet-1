@@ -101,12 +101,12 @@ def test(arguments):
     for idx, (data, box) in enumerate(tqdm(loader, total=len(loader))):
         if arguments.cuda:
             data = data.cuda(non_blocking=PIN_MEM)
-        data = torch.autograd.Variable(data, volatile=True)
+        data = torch.autograd.Variable(data).no_grad()
 
         output, loss = net(data, box)
 
         if torch.__version__.startswith('0.3'):
-            data = torch.autograd.Variable(data, volatile=True)
+            data = torch.autograd.Variable(data).no_grad()
             output, loss = net(data, box)
         else:
             with torch.no_grad():
