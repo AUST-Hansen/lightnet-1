@@ -25,22 +25,22 @@ ln.logger.setLogFile('train.log', filemode='w')             # Enable logging of 
 #ln.logger.setConsoleColor(False)                           # Disable colored terminal log messages
 
 # Parameters
-WORKERS = 20
+WORKERS = 4
 PIN_MEM = True
 ROOT = 'data'
 TRAINFILE = '{ROOT}/train.pkl'.format(ROOT=ROOT)
 TESTFILE  = '{ROOT}/valid.pkl'.format(ROOT=ROOT)
 VISDOM_PORT = 8097
 
-LABELS = ['fish', 'ignore', 'person', 'turtle_green', 'turtle_green+head', 'turtle_hawksbill', 'turtle_hawksbill+head']
+LABELS = ['antelope', 'baboon', 'bird', 'buffalo', 'car', 'cheetah', 'domesticated', 'elephant_savanna', 'giraffe_masai', 'giraffe_reticulated', 'hippopotamus', 'hyrax', 'indistinct', 'jackal', 'kudu', 'lizard', 'oryx', 'ostrich', 'person', 'tortoise', 'warthog', 'zebra_grevys', 'zebra_plains']
 CLASSES = len(LABELS)
 
 NETWORK_SIZE = (416, 416)
-CONF_THRESH = 0.01
-NMS_THRESH = 0.80
+CONF_THRESH = 0.001
+NMS_THRESH = 0.4
 
-BATCH = 512
-MINI_BATCH = 192
+BATCH = 64
+MINI_BATCH = 8
 MAX_BATCHES = 64000
 
 JITTER = 0.2
@@ -52,7 +52,7 @@ VAL = 1.5
 LEARNING_RATE = 0.0001
 MOMENTUM = 0.9
 DECAY = 0.0005
-LR_STEPS = [  100,  25000,   45000]
+LR_STEPS = [  250,  25000,   45000]
 LR_RATES = [0.001, 0.0001, 0.00001]
 
 BACKUP = 500
@@ -73,13 +73,13 @@ class VOCDataset(ln.models.BramboxDataset):
         def identify(img_id):
             return '{ROOT}/VOCdevkit/{img_id}'.format(ROOT=ROOT, img_id=img_id)
 
-        lb  = ln.data.Letterbox(dataset=self)
-        rf  = ln.data.RandomFlip(FLIP)
-        rc  = ln.data.RandomCrop(JITTER, True, 0.1)
-        hsv = ln.data.HSVShift(HUE, SAT, VAL)
+        lb  = ln.data.transform.Letterbox(dataset=self)
+        rf  = ln.data.transform.RandomFlip(FLIP)
+        rc  = ln.data.transform.RandomCrop(JITTER, True, 0.1)
+        hsv = ln.data.transform.HSVShift(HUE, SAT, VAL)
         it  = tf.ToTensor()
-        img_tf = tf.Compose([hsv, rc, rf, lb, it])
-        anno_tf = tf.Compose([rc, rf, lb])
+        img_tf = ln.data.transform.Compose([hsv, rc, rf, lb, it])
+        anno_tf = ln.data.transform.Compose([rc, rf, lb])
 
         super(VOCDataset, self).__init__('anno_pickle', anno, NETWORK_SIZE, LABELS, identify, img_tf, anno_tf)
 
@@ -100,12 +100,9 @@ class TrainingEngine(ln.engine.Engine):
 
         log.debug('Creating network')
         net = ln.models.Yolo(CLASSES, arguments.weight, CONF_THRESH, NMS_THRESH)
-        net.postprocess = tf.Compose([
-            net.postprocess,
-            ln.data.transform.TensorToBrambox(NETWORK_SIZE, LABELS),
-        ])
+        net.postprocess.append(ln.data.transform.TensorToBrambox(NETWORK_SIZE, LABELS))
         if self.cuda:
-            net.cuda()
+            net.cuda(async=PIN_MEM)
 
         log.debug('Creating optimizer')
         optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE / BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY * BATCH)
@@ -189,11 +186,18 @@ class TrainingEngine(ln.engine.Engine):
         loss = self.network(data, target)
         loss.backward()
 
-        self.train_loss['tot'].append(self.network.loss.loss_tot.data[0])
-        self.train_loss['coord'].append(self.network.loss.loss_coord.data[0])
-        self.train_loss['conf'].append(self.network.loss.loss_conf.data[0])
-        if self.network.loss.loss_cls is not None:
-            self.train_loss['cls'].append(self.network.loss.loss_cls.data[0])
+        if torch.__version__.startswith('0.3'):
+            self.train_loss['tot'].append(self.network.loss.loss_tot.data[0])
+            self.train_loss['coord'].append(self.network.loss.loss_coord.data[0])
+            self.train_loss['conf'].append(self.network.loss.loss_conf.data[0])
+            if self.network.loss.loss_cls is not None:
+                self.train_loss['cls'].append(self.network.loss.loss_cls.data[0])
+        else:
+            self.train_loss['tot'].append(self.network.loss.loss_tot.item())
+            self.train_loss['coord'].append(self.network.loss.loss_coord.item())
+            self.train_loss['conf'].append(self.network.loss.loss_conf.item())
+            if self.network.loss.loss_cls is not None:
+                self.train_loss['cls'].append(self.network.loss.loss_cls.item())
 
     def train_batch(self):
         self.optimizer.step()
@@ -248,7 +252,11 @@ class TrainingEngine(ln.engine.Engine):
 
             output, loss = self.network(data, target)
 
-            tot_loss.append(loss.data[0] * len(target))
+            if torch.__version__.startswith('0.3'):
+                tot_loss.append(loss.data[0] * len(target))
+            else:
+                tot_loss.append(loss.item() * len(target))
+
             key_val = len(anno)
             anno.update({key_val + k: v for k, v in enumerate(target)})
             det.update({key_val + k: v for k, v in enumerate(output)})
