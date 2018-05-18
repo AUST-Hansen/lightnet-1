@@ -25,7 +25,7 @@ ln.logger.setLogFile('train.log', filemode='w')             # Enable logging of 
 #ln.logger.setConsoleColor(False)                           # Disable colored terminal log messages
 
 # Parameters
-WORKERS = 4
+WORKERS = 8
 PIN_MEM = True
 ROOT = 'data'
 TRAINFILE = '{ROOT}/train.pkl'.format(ROOT=ROOT)
@@ -39,9 +39,9 @@ NETWORK_SIZE = (416, 416)
 CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
-BATCH = 64
-MINI_BATCH = 8
-MAX_BATCHES = 64000
+BATCH = 128
+MINI_BATCH = 32
+MAX_BATCHES = 45000
 
 JITTER = 0.2
 FLIP = 0.5
@@ -52,7 +52,7 @@ VAL = 1.5
 LEARNING_RATE = 0.0001
 MOMENTUM = 0.9
 DECAY = 0.0005
-LR_STEPS = [  250,  25000,   45000]
+LR_STEPS = [  250,  20000,   35000]
 LR_RATES = [0.001, 0.0001, 0.00001]
 
 BACKUP = 500
@@ -102,7 +102,7 @@ class TrainingEngine(ln.engine.Engine):
         net = ln.models.Yolo(CLASSES, arguments.weight, CONF_THRESH, NMS_THRESH)
         net.postprocess.append(ln.data.transform.TensorToBrambox(NETWORK_SIZE, LABELS))
         if self.cuda:
-            net.cuda(non_blocking=PIN_MEM)
+            net.cuda()
 
         log.debug('Creating optimizer')
         optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE / BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY * BATCH)

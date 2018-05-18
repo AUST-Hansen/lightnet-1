@@ -22,7 +22,7 @@ log = logging.getLogger('lightnet.train')
 #ln.logger.setConsoleColor(False)                           # Disable colored terminal output
 
 # Parameters
-WORKERS = 20
+WORKERS = 8
 PIN_MEM = True
 ROOT = 'data'
 TRAINFILE = '{ROOT}/train.pkl'.format(ROOT=ROOT)
@@ -36,7 +36,7 @@ CONF_THRESH = 0.001
 NMS_THRESH = 0.4
 
 BATCH = 192
-MINI_BATCH = 20
+MINI_BATCH = 8
 MAX_BATCHES = 45000
 
 JITTER = 0.2

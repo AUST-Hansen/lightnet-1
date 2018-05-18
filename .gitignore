@@ -31,4 +31,5 @@ examples/*/darknet19_448.conv.23
 examples/*/data/
 examples/*/test.log
 examples/*/train.log
+examples/*/detection*.png
 
