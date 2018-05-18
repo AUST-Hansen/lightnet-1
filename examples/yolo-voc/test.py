@@ -41,7 +41,7 @@ BATCH = 64
 MINI_BATCH = 8
 
 
-class CustomDataset(ln.data.BramboxData):
+class CustomDataset(ln.models.BramboxDataset):
     def __init__(self, anno, network):
         def identify(img_id):
             return '{ROOT}/VOCdevkit/{img_id}'.format(ROOT=ROOT, img_id=img_id)
