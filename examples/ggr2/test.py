@@ -68,7 +68,7 @@ def test(arguments):
 
     net.eval()
     if arguments.cuda:
-        net.cuda(async=PIN_MEM)
+        net.cuda(non_blocking=PIN_MEM)
 
     log.debug('Creating dataset')
     loader = torch.utils.data.DataLoader(
@@ -100,7 +100,7 @@ def test(arguments):
 
     for idx, (data, box) in enumerate(tqdm(loader, total=len(loader))):
         if arguments.cuda:
-            data = data.cuda(async=PIN_MEM)
+            data = data.cuda(non_blocking=PIN_MEM)
         data = torch.autograd.Variable(data, volatile=True)
 
         output, loss = net(data, box)

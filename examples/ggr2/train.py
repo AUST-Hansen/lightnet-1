@@ -102,7 +102,7 @@ class TrainingEngine(ln.engine.Engine):
         net = ln.models.Yolo(CLASSES, arguments.weight, CONF_THRESH, NMS_THRESH)
         net.postprocess.append(ln.data.transform.TensorToBrambox(NETWORK_SIZE, LABELS))
         if self.cuda:
-            net.cuda(async=PIN_MEM)
+            net.cuda(non_blocking=PIN_MEM)
 
         log.debug('Creating optimizer')
         optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE / BATCH, momentum=MOMENTUM, dampening=0, weight_decay=DECAY * BATCH)
@@ -180,7 +180,7 @@ class TrainingEngine(ln.engine.Engine):
     def process_batch(self, data):
         data, target = data
         if self.cuda:
-            data = data.cuda(async=PIN_MEM)
+            data = data.cuda(non_blocking=PIN_MEM)
         data = torch.autograd.Variable(data, requires_grad=True)
 
         loss = self.network(data, target)
@@ -246,7 +246,7 @@ class TrainingEngine(ln.engine.Engine):
 
         for idx, (data, target) in enumerate(tqdm(self.testloader, total=len(self.testloader))):
             if self.cuda:
-                data = data.cuda(async=PIN_MEM)
+                data = data.cuda(non_blocking=PIN_MEM)
 
             data = torch.autograd.Variable(data, volatile=True)
 
